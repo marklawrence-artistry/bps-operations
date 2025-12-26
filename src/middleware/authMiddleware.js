@@ -17,7 +17,7 @@ const verifyToken = (req, res, next) => {
 
     try {
         // Verify secret signature
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
         req.user = decoded;
 
