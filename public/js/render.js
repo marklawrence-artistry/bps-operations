@@ -37,7 +37,8 @@ export function renderManageUsers(contentDiv, data) {
         <div class="main-content">
             <div class="form-area">
                 <form id="user-form">
-                    <h2>Add New User</h2>
+                    <h2 class="form-title">Manage User</h2>
+                    <input type="text" class="user-id" style="display: none;">
                     <div class="form-item">
                         <label>Username</label>
                         <input type="text" class="user-username" placeholder="Enter your username..">
@@ -56,28 +57,6 @@ export function renderManageUsers(contentDiv, data) {
                     </div>
                     <button type="submit">Submit</button>
                     <a id="cancel-user">Cancel</a>
-                </form>
-                <form id="user-update-form">
-                    <h2>Update User Info</h2>
-                    <input type="text" class="update-user-id" style="display: none;">
-                    <div class="form-item">
-                        <label>Username</label>
-                        <input type="text" class="update-username" placeholder="Enter your username..">
-                    </div>
-                    <div class="form-item">
-                        <label>Email</label>
-                        <input type="email" class="update-email" placeholder="Enter your email..">
-                    </div>
-                    <div class="form-item">
-                        <label>Password</label>
-                        <input type="password" class="update-password" placeholder="Enter your password..">
-                    </div>
-                    <div class="form-item">
-                        <label>Role (select tag to dapat)</label>
-                        <input type="text" class="update-role" placeholder="Enter your role..">
-                    </div>
-                    <button type="submit">Submit</button>
-                    <a id="cancel-update">Cancel</a>
                 </form>
             </div>
             <div class="table-area">
@@ -123,16 +102,18 @@ export function renderManageUsers(contentDiv, data) {
 
             // For Edit
             if(editBtn) {
-                updateUserForm.style.display = "block";
-                if(userForm) userForm.style.display = "none";
+                userForm.reset()
+                userForm.style.display = "block";
 
                 const token = JSON.parse(localStorage.getItem('token'));
                 const user = await api.getUser(token, user_id)
-                updateUserForm.querySelector('.update-user-id').value = user_id;
-                updateUserForm.querySelector('.update-username').value = user.username;
-                updateUserForm.querySelector('.update-email').value = user.email;
-                updateUserForm.querySelector('.update-password').value = ""
-                updateUserForm.querySelector('.update-role').value = user.role_id;
+                userForm.querySelector('.form-title').innerText = "Update user";
+
+                userForm.querySelector('.user-id').value = user_id;
+                userForm.querySelector('.user-username').value = user.username;
+                userForm.querySelector('.user-email').value = user.email;
+                userForm.querySelector('.user-password').value = ""
+                userForm.querySelector('.user-role').value = user.role_id;
             }
 
             if(deleteBtn) {
@@ -154,54 +135,39 @@ export function renderManageUsers(contentDiv, data) {
         userForm.addEventListener('submit', async (e) => {
             e.preventDefault()
             
-            const newUser = {
-                username: userForm.querySelector('.user-username').value.trim(),
-                email: userForm.querySelector('.user-email').value.trim(),
-                password: userForm.querySelector('.user-password').value.trim(),
-                role_id: userForm.querySelector('.user-role').value.trim()
+            const data = {
+                username: userForm.querySelector('.user-username').value.trim() || null,
+                email: userForm.querySelector('.user-email').value.trim() || null,
+                password: userForm.querySelector('.user-password').value.trim() || null,
+                role_id: userForm.querySelector('.user-role').value.trim() || null
             }
 
             const token = JSON.parse(localStorage.getItem('token'));
-            await api.createUser(token, newUser)
-
-            alert("Created user successfully.")
-            location.reload()
-        })
-    }
-    if(updateUserForm) {
-        updateUserForm.addEventListener('submit', async (e) => {
-            e.preventDefault()
-            
-            console.log(updateUserForm.querySelector('.update-username').value.trim())
-            console.log(updateUserForm.querySelector('.update-user-id').value.trim())
-
-            const updatedUser = {
-                username: updateUserForm.querySelector('.update-username').value.trim() || null,
-                email: updateUserForm.querySelector('.update-email').value.trim() || null,
-                password: updateUserForm.querySelector('.update-password').value.trim() || null,
-                role_id: updateUserForm.querySelector('.update-role').value.trim() || null
+            const id = document.querySelector('.user-id').value;
+            console.log(id)
+            if (id) {
+                alert("Updated user successfully.")
+                await api.updateUser(token, data, id);
+            } else {
+                alert("Created user successfully.")
+                await api.createUser(token, data);
             }
-            const token = JSON.parse(localStorage.getItem('token'));
-            await api.updateUser(token, updatedUser, updateUserForm.querySelector('.update-user-id').value)
 
-            alert("Updated user successfully.")
             location.reload()
         })
     }
     if(addNewUserBtn){
         addNewUserBtn.addEventListener('click', (e) => {
-            if(updateUserForm) updateUserForm.style.display = "none";
             userForm.style.display = "block";
+            userForm.querySelector('.user-id').value = "";
+            userForm.querySelector('.form-title').innerText = "Add new user";
+            userForm.reset()
         })
     }
     if(cancelBtn) {
         cancelBtn.addEventListener('click', (e) => {
             userForm.style.display = "none";
-        })
-    }
-    if(cancelUpdateBtn) {
-        cancelUpdateBtn.addEventListener('click', (e) => {
-            updateUserForm.style.display = "none";
+            userForm.reset()
         })
     }
 }
