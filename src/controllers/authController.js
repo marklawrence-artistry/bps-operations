@@ -70,7 +70,7 @@ const login = async (req, res) => {
 const getAllUsers = async (req, res) => {
     try {
         const users = await all(`
-            SELECT * FROM users    
+            SELECT id, username, email, role_id, is_active, created_at FROM users    
         `)
 
         res.status(200).json({success:true,data:users})
