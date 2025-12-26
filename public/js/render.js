@@ -1,3 +1,4 @@
+import * as api from './api.js'
 
 export function renderManageUsers(contentDiv, data) {
     contentDiv.innerHTML = ''
@@ -5,21 +6,26 @@ export function renderManageUsers(contentDiv, data) {
     let content = '';
 
     data.forEach(item => {
-        content += `
-            <tr data-id=${item.id}>
-                <td>${item.id}</td>
-                <td>${item.username}</td>
-                <td>${item.email}</td>
-                <td>${item.role_id}</td>
-                <td>${item.created_at}</td>
-                <td>
-                    <div class="action-buttons">
-                        <button class="edit-btn">Edit</button>
-                        <button class="delete-btn">Delete</button>
-                    </div>
-                </td>
-            </tr>
-        `
+        if(item.is_active === 0) {
+            return
+        } else {
+            content += `
+                <tr data-id=${item.id}>
+                    <td>${item.id}</td>
+                    <td>${item.username}</td>
+                    <td>${item.email}</td>
+                    <td>${item.role_id}</td>
+                    <td>${item.created_at}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="edit-btn">Edit</button>
+                            <button class="delete-btn">Delete</button>
+                        </div>
+                    </td>
+                </tr>
+            `
+        }
+        
     })
 
     contentDiv.innerHTML = `
@@ -45,7 +51,7 @@ export function renderManageUsers(contentDiv, data) {
 
     let usersTable = contentDiv.querySelector('#users-table')
     if(usersTable) {
-        usersTable.addEventListener('click', (e) => {
+        usersTable.addEventListener('click', async (e) => {
             e.preventDefault();
 
             const row = e.target.closest('tr')
@@ -54,11 +60,22 @@ export function renderManageUsers(contentDiv, data) {
             const deleteBtn = e.target.closest('.delete-btn')
 
             if(editBtn) {
-                
+                console.log(user_id)
             }
 
             if(deleteBtn) {
-                console.log(user_id)
+                if(confirm("Are you sure you want to delete this user?")) {
+                    try {
+                        const token = JSON.parse(localStorage.getItem('token'));
+                        const data = await api.deleteUser(token, user_id)
+                        console.log(data)
+
+                        alert("Deleted user successfully.")
+                        location.reload()
+                    } catch(err) {
+                        alert(`Error: ${err.message}`)
+                    }
+                }
             }
         })
     }
