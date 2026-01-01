@@ -29,13 +29,55 @@ export function renderManageUsers(contentDiv, data) {
     })
 
     contentDiv.innerHTML = `
-        <div class="header-content">
-            <h1>Manage Users</h1>
-            <button id="add-new-user">Add new user</button>
-        </div>
+        <div class="content-wrapper manage-user-container">
+            <div class="manage-users-header">
+                <h1>Manage User Accounts</h1>
+            </div>
 
-        <div class="main-content">
-            <div class="form-area">
+            <div class="controls-row">
+                <div class="filter-group">
+                    <button class="filter-pill orange">Staffs</button>
+                    <button class="filter-pill dark-orange">Admin</button>
+                </div>
+                
+                <div class="right-controls">
+                    <div class="search-box">
+                        <img src="icons/Manage User Acc Page/search_icon.png" alt="Search">
+                        <input type="text" placeholder="Search">
+                    </div>
+                    <button id="add-new-user">
+                        <img src="icons/Manage User Acc Page/add_account_icon.png" alt="+">
+                        <span>Add New Account</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="manage-content-body">
+                <div class="table-card">
+                    <div class="table-area">
+                        <table id="users-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Username</th>
+                                    <th>Email</th>
+                                    <th>Role ID</th>
+                                    <th>Created at</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${content}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="table-pagination">
+                        &lt; 1 2 3 4 5 6 &gt;
+                    </div>
+                </div>
+
+                <!-- Form Side Panel (Directly ID'd for JS toggling) -->
                 <form id="user-form">
                     <h2 class="form-title">Manage User</h2>
                     <input type="text" class="user-id" style="display: none;">
@@ -52,34 +94,13 @@ export function renderManageUsers(contentDiv, data) {
                         <input type="password" class="user-password" placeholder="Enter your password..">
                     </div>
                     <div class="form-item">
-                        <label>Role (select tag to dapat)</label>
-                        <input type="text" class="user-role" placeholder="Enter your role..">
+                        <label>Role ID</label>
+                        <input type="text" class="user-role" placeholder="Enter role ID (e.g. 1)">
                     </div>
                     <button type="submit">Submit</button>
                     <a id="cancel-user">Cancel</a>
                 </form>
             </div>
-            <div class="table-area">
-                <table id="users-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Username</th>
-                            <th>Email</th>
-                            <th>Role ID</th>
-                            <th>Created At</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${content}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="footer-content">
-
         </div>
     `
     let userForm = contentDiv.querySelector('#user-form')
@@ -172,12 +193,134 @@ export function renderManageUsers(contentDiv, data) {
     }
 }
 
-export function renderDashboard(contentDiv) {
-    contentDiv.innerHTML = '';
-
+export async function renderDashboard(contentDiv) {
+    // 1. Inject HTML Structure
     contentDiv.innerHTML = `
-        <h1 class="camacho">Dashboard</h1>
+        <div class="content-wrapper">
+            <!-- Header -->
+            <div class="dashboard-header">
+                <h1>Overview</h1>
+                <div class="user-info">
+                    <span class="username">Username</span>
+                    <span class="role">Role</span>
+                </div>
+            </div>
 
-        yo
-    `
+            <!-- Stats Cards -->
+            <div class="stats-container">
+                <!-- Low Stocks Card -->
+                <div class="stat-card">
+                    <div>
+                        <div class="stat-label">Total no. of</div>
+                        <div class="stat-title">Low Stocks</div>
+                    </div>
+                    <div class="stat-value-area">
+                        <div class="stat-value">120+</div>
+                        <img src="icons/Dashboard Page/low_stocks_icon.png" class="stat-icon" alt="Icon">
+                    </div>
+                </div>
+
+                <!-- Sales Card -->
+                <div class="stat-card">
+                    <div>
+                        <div class="stat-label">Total sales of</div>
+                        <div class="stat-title">January</div>
+                    </div>
+                    <div class="stat-value-area">
+                        <div class="stat-value">8,475k</div>
+                        <img src="icons/Dashboard Page/total_sales_icon.png" class="stat-icon" alt="Icon">
+                    </div>
+                </div>
+
+                <!-- Sellers Card -->
+                <div class="stat-card">
+                    <div>
+                        <div class="stat-label">Total no. of</div>
+                        <div class="stat-title">Sellers</div>
+                    </div>
+                    <div class="stat-value-area">
+                        <div class="stat-value">120+</div>
+                        <img src="icons/Dashboard Page/total_sellers_icon.png" class="stat-icon" alt="Icon">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chart Section -->
+            <div class="chart-section">
+                <div class="chart-header">
+                    <div class="chart-title">
+                        <h2>Average Sales per Month</h2>
+                        <div class="chart-subtitle">Grand Total: 475k</div>
+                    </div>
+                    <div class="chart-stat">400k+</div>
+                </div>
+                
+                <div class="chart-container-box">
+                    <canvas id="salesChart"></canvas>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // 2. Initialize Chart.js
+    // Wait for DOM update
+    setTimeout(() => {
+        const ctx = document.getElementById('salesChart').getContext('2d');
+        
+        // Gradient for the line fill (optional, if design implies it, otherwise just line)
+        // Design shows a simple blue line.
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['100', '200', '300', '400'], // X-axis labels from image
+                datasets: [{
+                    label: 'Sales',
+                    data: [100, 200, 300, 400], // Linear growth data to match line
+                    borderColor: '#4FC3F7', // Light Blue color
+                    backgroundColor: 'rgba(79, 195, 247, 0.1)',
+                    borderWidth: 2,
+                    tension: 0, // Straight line
+                    pointRadius: 0, // No points visible on the line usually, or small
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false // No legend shown in image
+                    },
+                    tooltip: {
+                        enabled: true
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: '#e0e0e0',
+                            drawBorder: false
+                        },
+                        ticks: {
+                            color: '#9E9E9E',
+                            stepSize: 100
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false // No vertical grid lines usually
+                        },
+                        ticks: {
+                            color: '#9E9E9E'
+                        }
+                    }
+                },
+                layout: {
+                    padding: 0
+                }
+            }
+        });
+    }, 0);
 }

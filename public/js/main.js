@@ -14,6 +14,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const router = async () => {
         const hash = window.location.hash || '#dashboard';
 
+        // Update Sidebar Active State
+        updateActiveSidebar(hash);
+
         contentDiv.innerHTML = '<div>Loading data..</div>';
 
         try {
@@ -40,6 +43,30 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     }
+
+    const updateActiveSidebar = (hash) => {
+        const navItems = document.querySelectorAll('.nav-item');
+        navItems.forEach(item => item.classList.remove('active'));
+
+        const hashToId = {
+            '#dashboard': 'nav-dashboard',
+            '#accounts': 'nav-accounts',
+            '#audit': 'nav-audit',
+            '#inventory': 'nav-inventory',
+            '#inventory-cat': 'nav-inventory-cat',
+            '#sellers': 'nav-sellers',
+            '#rts': 'nav-rts',
+            '#documents': 'nav-documents',
+            '#sales': 'nav-sales'
+        };
+
+        const activeId = hashToId[hash];
+        if (activeId) {
+            const activeItem = document.getElementById(activeId);
+            if (activeItem) activeItem.classList.add('active');
+        }
+    }
+
     window.addEventListener('hashchange', router)
     router();
 
@@ -56,6 +83,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if(navItem) {
                 const idToHash = {
                     'nav-dashboard': 'dashboard',
+                    'nav-audit': 'audit',
+                    'nav-inventory': 'inventory',
+                    'nav-inventory-cat': 'inventory-cat',
+                    'nav-sellers': 'sellers',
+                    'nav-rts': 'rts',
+                    'nav-documents': 'documents',
+                    'nav-sales': 'sales',
                     'nav-accounts': 'accounts'
                 }
 

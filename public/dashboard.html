@@ -10,51 +10,75 @@
     
     <div class="container">
         <div class="sidebar">
-            <div class="sidebar-header">
-                <h1>Welcome</h1>
+            <div class="logo-container">
+
+                <img src="logo/logo.png" alt="Bicodo Postal Services"> 
+
+            </div>
+
+            <div class="sidebar-header welcome-text">
+                <h2>Welcome Back!</h2>
                 <p>BPS Operations System</p>
             </div>
 
             <div class="nav-wrapper">
-                <div class="nav-item" id="nav-dashboard">
-                    <img src="icons/dashboard.png">
-                    <label>Dashboard</label>
+                <!-- Overview Group -->
+                <div class="nav-group">
+                    <div class="nav-category">Overview</div>
+                    <div class="nav-item active" id="nav-dashboard">
+                        <img src="icons/Sidebar-Navigation Bar (All Pages)/dashboard-icon.png" alt="Dashboard">
+                        <span>Dashboard</span>
+                    </div>
+                    <div class="nav-item" id="nav-audit">
+                        <img src="icons/Sidebar-Navigation Bar (All Pages)/audit_log_icon.png" alt="Audit">
+                        <span>Audit Log</span>
+                    </div>
                 </div>
-                <div class="nav-item" id="nav-audit">
-                    <img src="icons/.png">
-                    <label>Audit Log</label>
+
+                <!-- Staff Group -->
+                <div class="nav-group">
+                    <div class="nav-category">Staff</div>
+                    <div class="nav-item" id="nav-inventory">
+                        <img src="icons/Sidebar-Navigation Bar (All Pages)/inventory_icon.png" alt="Inventory">
+                        <span>Inventory</span>
+                    </div>
+                    <div class="nav-item" id="nav-inventory-cat">
+                        <img src="icons/Sidebar-Navigation Bar (All Pages)/inv_categories_icon.png" alt="Categories">
+                        <span>Inventory Categories</span>
+                    </div>
+                    <div class="nav-item" id="nav-sellers">
+                        <img src="icons/Sidebar-Navigation Bar (All Pages)/sellers_icon.png" alt="Sellers">
+                        <span>Sellers</span>
+                    </div>
+                    <div class="nav-item" id="nav-rts">
+                        <img src="icons/Sidebar-Navigation Bar (All Pages)/returned_icon.png" alt="RTS">
+                        <span>Returned-to-Seller</span>
+                    </div>
+                    <div class="nav-item" id="nav-documents">
+                        <img src="icons/Sidebar-Navigation Bar (All Pages)/document_icon.png" alt="Documents">
+                        <span>Documents</span>
+                    </div>
                 </div>
-                <div class="nav-item" id="nav-inventory">
-                    <img src="icons/.png">
-                    <label>Inventory</label>
-                </div>
-                <div class="nav-item" id="nav-inventory-cat">
-                    <img src="icons/.png">
-                    <label>Inventory Categories</label>
-                </div>
-                <div class="nav-item" id="nav-sellers">
-                    <img src="icons/.png">
-                    <label>Sellers</label>
-                </div>
-                <div class="nav-item" id="nav-rts">
-                    <img src="icons/.png">
-                    <label>Returned-to-Seller</label>
-                </div>
-                <div class="nav-item" id="nav-documents">
-                    <img src="icons/.png">
-                    <label>Documents</label>
-                </div>
-                <div class="nav-item" id="nav-sales">
-                    <img src="icons/.png">
-                    <label>Sales</label>
-                </div>
-                <div class="nav-item" id="nav-accounts">
-                    <img src="icons/.png">
-                    <label>Accounts</label>
+
+                <!-- Admin Group -->
+                <div class="nav-group">
+                    <div class="nav-category">Admin</div>
+                    <div class="nav-item" id="nav-sales">
+                        <img src="icons/Sidebar-Navigation Bar (All Pages)/sales_icon.png" alt="Sales">
+                        <span>Sales</span>
+                    </div>
+                    <div class="nav-item" id="nav-accounts">
+                        <img src="icons/Sidebar-Navigation Bar (All Pages)/accounts_icon.png" alt="Accounts">
+                        <span>Accounts</span>
+                    </div>
                 </div>
             </div>
+
             <div class="sidebar-footer">
-                <button id="logout">Logout</button>
+                <button id="logout" class="logout-btn">
+                    <img src="icons/Sidebar-Navigation Bar (All Pages)/sign-out.png" alt="Logout">
+                    <span>Log out</span>
+                </button>
             </div>
         </div>
         
@@ -64,6 +88,7 @@
     </div>
 
 
+    <script src="js/chart.js"></script>
     <script type="module" src="js/main.js"></script>
 </body>
 </html>
