@@ -5,15 +5,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // *********** CONSTANTS *************
     const loginForm = document.querySelector('#login-form');
+    const accountForm = document.querySelector('#account-form');
+
     const logoutBtn = document.querySelector('#logout-button');
+    const createAccountBtn = document.querySelector('#create-account-btn');
+    const cancelAccountBtn = document.querySelector('#cancel-account-btn');
 
-
+    const accountListDiv = document.querySelector('#account-list');
 
 
 
 
 
     // *********** AUTHENTICATION *************
+    // (AUTH) LOGIN
     if(loginForm) {
         console.log(loginForm)
         loginForm.addEventListener('submit', async (e) => {
@@ -47,7 +52,75 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         })
     }
-    // (AUTH) Gatekeeper
+
+    // (AUTH) CREATE/UPDATE
+    if(createAccountBtn) {
+        createAccountBtn.addEventListener('click', (e) => {
+            e.preventDefault()
+
+            accountForm.reset();
+            accountForm.style.display = "block"
+            cancelAccountBtn.style.display = "block"
+            accountForm.querySelector('#form-title').innerText = "Create New Account"
+        })
+    }
+    if(cancelAccountBtn) {
+        cancelAccountBtn.addEventListener('click', (e) => {
+            e.preventDefault()
+
+            accountForm.reset();
+            accountForm.style.display = "none"
+            cancelAccountBtn.style.display = "none"
+        })
+    }
+    if(accountForm) {
+        
+        // Prevent emoji in input tags
+        const usernameTextbox = accountForm.querySelector('#account-username');
+        if(usernameTextbox) {
+            usernameTextbox.addEventListener( "input", event => {
+                const target = event.target;
+                const regex = /[^\p{L}\p{N}\p{P}\p{Z}\s]/gu; 
+
+                if (regex.test(target.value)) {
+                    target.value = target.value.replace(regex, '');
+                }
+            }, false);
+        }
+
+        // CREATE/UPDATE Form
+        accountForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            try {
+                const data = {
+                    username: accountForm.querySelector('#account-username').value.trim() || null,
+                    email: accountForm.querySelector('#account-email').value.trim() || null,
+                    role_id: accountForm.querySelector('#account-role').value || null,
+                    password: accountForm.querySelector('#account-password').value.trim() || null
+                }
+
+                const user_id = accountForm.querySelector('#account-id').value;
+                const token = JSON.parse(localStorage.getItem('token'));
+                if(user_id) {
+                    await api.updateAccount(data, token, user_id);
+                    alert("Account updated successfully!");
+                } else {
+                    await api.createAccount(data, token);
+                    alert("Account created successfully!");
+                }
+
+                location.reload();
+                accountForm.reset();
+            } catch(err) {
+                alert(`Error: ${err.message}`);
+            }
+        })
+    }
+    
+
+
+    // (AUTH) Gatekeepers
     if(!(window.location.pathname.endsWith('index.html'))) {
         // TODO: create a api/controller that checks if the token is verified/valid and put it on else statement.
 

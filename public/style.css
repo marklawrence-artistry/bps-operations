@@ -35,8 +35,6 @@
     padding: 15px;
     gap: 2rem;
 }
-
-
 .sidebar-content {
     display: flex;
     flex-direction: column;
@@ -44,24 +42,30 @@
     gap: 1rem;
     flex-grow: 1;
 }
+.sidebar-footer button {
+    padding: 15px;
+    width: 100%;
+}
+.sidebar-footer button:hover {
+    background-color: gray;
+    color: white;
+}
 
 .nav-item {
     padding: 5px;
     display: flex;
     gap: 1rem;
 }
-
 .nav-item:hover {
     background-color: gray;
     color: white;
 }
 
-.sidebar-footer button {
-    padding: 15px;
-    width: 100%;
-}
 
-.sidebar-footer button:hover {
-    background-color: gray;
-    color: white;
+
+
+
+
+#account-form, #cancel-account-btn {
+    display: none;
 }

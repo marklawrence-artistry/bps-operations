@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Accounts - BPS Records Management System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="content">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h1>Welcome</h1>
+                <p>BPS Records Management System</p>
+            </div>
+
+            <div class="sidebar-content">
+                <a class="nav-item" href="dashboard.html">
+                    <img src="../">
+                    <label>Dashboard</label>
+                </a>
+                <a class="nav-item" href="audit-log.html">
+                    <img src="../">
+                    <label>Audit Log</label>
+                </a>
+                <a class="nav-item" href="inventory.html">
+                    <img src="../">
+                    <label>Inventory</label>
+                </a>
+                <a class="nav-item" href="reports.html">
+                    <img src="../">
+                    <label>Reports</label>
+                </a>
+                <a class="nav-item" href="sellers.html">
+                    <img src="../">
+                    <label>Sellers</label>
+                </a>
+                <a class="nav-item" href="rts.html">
+                    <img src="../">
+                    <label>Returned-to-Seller</label>
+                </a>
+                <a class="nav-item" href="documents.html">
+                    <img src="../">
+                    <label>Documents</label>
+                </a>
+                <a class="nav-item admin-nav" href="sales.html">
+                    <img src="../">
+                    <label>Sales</label>
+                </a>
+                <a class="nav-item admin-nav active" href="accounts.html">
+                    <img src="../">
+                    <label>Accounts</label>
+                </a>
+            </div>
+
+            <div class="sidebar-footer">
+                <button id="logout-button">Logout</button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="main-header">
+                <h1>Manage Accounts</h1>
+
+                <button id="create-account-btn">Create New</button>
+                <div class="form-wrapper">
+                    <form id="account-form">
+                        <h3 id="form-title">Create New Account</h3>
+
+                        <input type="text" id="account-id" style="display: none;">
+
+                        <div class="form-item">
+                            <label>Username</label>
+                            <input type="text" id="account-username" placeholder="Enter account username..">
+                        </div>
+
+                        <div class="form-item">
+                            <label>Email</label>
+                            <input type="email" id="account-email" placeholder="Enter account email..">
+                        </div>
+
+                        <div class="form-item">
+                            <label>Role</label>
+                            <select id="account-role">
+                                <option value="1">Admin</option>
+                                <option value="2">Staff</option>
+                            </select>
+                        </div>
+
+                        <div class="form-item">
+                            <label>Password</label>
+                            <input type="password" id="account-password" placeholder="Min. 8 Characters..">
+                        </div>
+
+                        <button type="submit">Submit</button>
+                        <button type="button" id="cancel-account-btn">Cancel</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="main">
+                <div id="account-list">
+                    
+                </div>
+            </div>
+
+            <div class="main-footer">
+
+            </div>
+        </div>
+    </div>
+
+    <script src="js/main.js" type="module"></script>
+</body>
+</html>
