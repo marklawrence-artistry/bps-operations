@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const token = JSON.parse(localStorage.getItem('token'));
             // kailangan ng token dito para dumaan siya sa verifyToken middleware pero di na siya gagamitin sa controller
 			const result = await api.checkSession(token);
-            console.log(result)
+            currentAccount = result.user;
             applyRoleBasedUI();
 		} catch(err) {
             alert(`Error: ${err.message}`);
