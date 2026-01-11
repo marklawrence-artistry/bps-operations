@@ -70,7 +70,7 @@ const login = async (req, res) => {
 const getAllUsers = async (req, res) => {
     try {
         const users = await all(`
-            SELECT id, username, email, role_id, is_active, created_at FROM users    
+            SELECT id, username, email, role_id, is_active FROM users    
         `)
 
         res.status(200).json({success:true,data:users})
@@ -151,13 +151,10 @@ const deleteUser = async (req, res) => {
         const { id } = req.params;
 
         await run(`
-            UPDATE users
-            SET
-                is_active = 0
-            WHERE id = ?    
+            DELETE FROM users WHERE id = ?  
         `, [id])
 
-        await logAudit(req.user.id, 'UPDATE', 'users', id, `Disabled user ID: ${id}`, req.ip);
+        await logAudit(req.user.id, 'DELETE', 'users', id, `Deleted user ID: ${id}`, req.ip);
 
         return res.status(200).json({success:true,data:"User deleted successfully!"})
     } catch(err) {
@@ -179,4 +176,25 @@ const getUser = async(req, res) => {
     }
 }
 
-module.exports = { login, getAllUsers, createUser, updateUser, deleteUser, getUser }
+
+
+const disableUser = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        await run(`
+            UPDATE users
+            SET
+                is_active = 0
+            WHERE id = ?    
+        `, [id])
+
+        await logAudit(req.user.id, 'UPDATE', 'users', id, `Disabled user ID: ${id}`, req.ip);
+
+        return res.status(200).json({success:true,data:"User disabled successfully!"})
+    } catch(err) {
+        return res.status(500).json({success:false,data:`Internal Server Error: ${err.message}`})
+    }
+}
+
+module.exports = { login, getAllUsers, createUser, updateUser, deleteUser, getUser, disableUser }

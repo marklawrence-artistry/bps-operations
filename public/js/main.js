@@ -1,4 +1,5 @@
 import * as api from './api.js'
+import * as render from './render.js'
 
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -15,9 +16,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+    // *********** RENDERERS *************
+    async function loadAccounts() {
+        try {
+            const token = JSON.parse(localStorage.getItem('token'));
+			const result = await api.getAllAccounts(token);
+			render.renderAccountsTable(result, accountListDiv);
+		} catch(err) {
+            alert(`Error: ${err.message}`);
+			if(err.message === "Invalid or expired token.") {
+                localStorage.removeItem('token')
+                location.href = 'index.html';
+            }
+		}
+    }
 
 
-    // *********** AUTHENTICATION *************
+    // *********** ACCOUNTS/AUTHENTICATION *************
     // (AUTH) LOGIN
     if(loginForm) {
         console.log(loginForm)
@@ -52,7 +67,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         })
     }
-
     // (AUTH) CREATE/UPDATE
     if(createAccountBtn) {
         createAccountBtn.addEventListener('click', (e) => {
@@ -74,7 +88,6 @@ document.addEventListener('DOMContentLoaded', () => {
         })
     }
     if(accountForm) {
-        
         // Prevent emoji in input tags
         const usernameTextbox = accountForm.querySelector('#account-username');
         if(usernameTextbox) {
@@ -114,6 +127,55 @@ document.addEventListener('DOMContentLoaded', () => {
                 accountForm.reset();
             } catch(err) {
                 alert(`Error: ${err.message}`);
+            }
+        })
+    }
+    // (AUTH) TABLE EVENT LISTENER (UPDATE/DELETE)
+    if(accountListDiv) {
+        loadAccounts();
+
+        accountListDiv.addEventListener('click', async (e) => {
+            e.preventDefault();
+
+            const row = e.target.closest('tr');
+            const account_id = row.dataset.id;
+            const token = JSON.parse(localStorage.getItem('token'));
+
+            if(e.target.classList.contains('edit-btn')) {
+                accountForm.reset();
+                accountForm.style.display = "block"
+                cancelAccountBtn.style.display = "block"
+
+                const account = await api.getAccount(account_id, token)
+                accountForm.querySelector('#form-title').innerText = "Update Existing Account"
+
+                accountForm.querySelector('#account-username').value = account.username
+                accountForm.querySelector('#account-email').value = account.email
+                accountForm.querySelector('#account-role').value = account.role === 1 ? "1" : "2"; 
+                accountForm.querySelector('#account-password').value = "";
+                accountForm.querySelector('#account-id').value = account.id;
+            }
+
+            if(e.target.classList.contains('delete-btn')) {
+                if(confirm("Are you sure you want to delete this account?")) {
+                    try {
+                        await api.deleteAccount(account_id, token)
+                        location.reload()
+                    } catch(err) {
+                        alert(`Error: ${err.message}`)
+                    }
+                }
+            }
+
+            if(e.target.classList.contains('disable-btn')) {
+                if(confirm("Are you sure you want to disable this account?")) {
+                    try {
+                        await api.disableAccount(account_id, token)
+                        location.reload()
+                    } catch(err) {
+                        alert(`Error: ${err.message}`)
+                    }
+                }
             }
         })
     }
