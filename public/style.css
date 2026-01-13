@@ -66,6 +66,6 @@
 
 
 
-#account-form, #cancel-account-btn {
+#account-form, #inventory-category-form, #cancel-account-btn, #cancel-inventory-category-btn {
     display: none;
 }

@@ -9,12 +9,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // *********** CONSTANTS *************
     const loginForm = document.querySelector('#login-form');
     const accountForm = document.querySelector('#account-form');
+    const inventoryCategoryForm = document.querySelector('#inventory-category-form');
 
     const logoutBtn = document.querySelector('#logout-button');
     const createAccountBtn = document.querySelector('#create-account-btn');
     const cancelAccountBtn = document.querySelector('#cancel-account-btn');
+    const createInventoryCategoryBtn = document.querySelector('#create-inventory-category-btn');
+    const cancelInventoryCategoryBtn = document.querySelector('#cancel-inventory-category-btn');
 
     const accountListDiv = document.querySelector('#account-list');
+    const inventoryCategoriesListDiv = document.querySelector('#inventory-category-list');
+
 
 
     // *********** HELPER FUNCTIONS *************
@@ -34,7 +39,6 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
     }
     function applyRoleBasedUI() {
-        console.log(currentAccount)
         if (!currentAccount) return;
 
         if (currentAccount.role_id === 2) {
@@ -45,12 +49,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+
+
     // *********** RENDERERS *************
-    async function loadAccounts() {
+    async function loadData(api_method, render_method, div_container) {
         try {
             const token = JSON.parse(localStorage.getItem('token'));
-			const result = await api.getAllAccounts(token);
-			render.renderAccountsTable(result, accountListDiv);
+			const result = await api_method(token);
+			render_method(result, div_container);
 		} catch(err) {
             alert(`Error: ${err.message}`);
 			if(err.message === "Invalid or expired token.") {
@@ -59,6 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 		}
     }
+
 
 
     // *********** ACCOUNTS/AUTHENTICATION *************
@@ -101,21 +108,21 @@ document.addEventListener('DOMContentLoaded', () => {
     // (AUTH) CREATE/UPDATE
     if(createAccountBtn) {
         createAccountBtn.addEventListener('click', (e) => {
-            e.preventDefault()
+            e.preventDefault();
 
             accountForm.reset();
-            accountForm.style.display = "block"
-            cancelAccountBtn.style.display = "block"
-            accountForm.querySelector('#form-title').innerText = "Create New Account"
+            accountForm.style.display = "block";
+            cancelAccountBtn.style.display = "block";
+            accountForm.querySelector('#form-title').innerText = "Create New Account";
         })
     }
     if(cancelAccountBtn) {
         cancelAccountBtn.addEventListener('click', (e) => {
-            e.preventDefault()
+            e.preventDefault();
 
             accountForm.reset();
-            accountForm.style.display = "none"
-            cancelAccountBtn.style.display = "none"
+            accountForm.style.display = "none";
+            cancelAccountBtn.style.display = "none";
         })
     }
     if(accountForm) {
@@ -163,7 +170,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     // (AUTH) TABLE EVENT LISTENER (UPDATE/DELETE)
     if(accountListDiv) {
-        loadAccounts();
+        loadData(api.getAllAccounts, render.renderAccountsTable, accountListDiv);
 
         accountListDiv.addEventListener('click', async (e) => {
             e.preventDefault();
@@ -211,6 +218,83 @@ document.addEventListener('DOMContentLoaded', () => {
         })
     }
     
+
+
+    // *********** INVENTORY *************
+    // (INVENTORY) CREATE
+    if(createInventoryCategoryBtn) {
+        createInventoryCategoryBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+
+            inventoryCategoryForm.reset();
+            inventoryCategoryForm.style.display = "block";
+            cancelInventoryCategoryBtn.style.display = "block";
+            inventoryCategoryForm.querySelector('#form-title').innerText = "Create New Inventory Category";
+        })
+    }
+    if(cancelInventoryCategoryBtn) {
+        cancelInventoryCategoryBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+
+            inventoryCategoryForm.reset();
+            inventoryCategoryForm.style.display = "none";
+            cancelInventoryCategoryBtn.style.display = "none";
+        })
+    }
+    if(inventoryCategoryForm) {
+        inventoryCategoryForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            try {
+                const data = {
+                    name: inventoryCategoryForm.querySelector('#inventory-category-name').value.trim() || null,
+                    description: inventoryCategoryForm.querySelector('#inventory-category-description').value.trim() || null,
+                    staff_id: currentAccount.id
+                }
+
+                const inventory_category_id = inventoryCategoryForm.querySelector('#inventory-category-id').value;
+                const token = JSON.parse(localStorage.getItem('token'));
+                if(inventory_category_id) {
+                    // await api.updateAccount(data, token, user_id);
+                    // alert("Account updated successfully!");
+                    return;
+                } else {
+                    await api.createInventoryCategory(data, token);
+                    alert("Inventory category created successfully!");
+                }
+
+                location.reload();
+                inventoryCategoryForm.reset();
+            } catch(err) {
+                alert(`Error: ${err.message}`);
+            }
+        })
+    }
+    // (AUTH) TABLE EVENT LISTENER (ELETE)
+    if(inventoryCategoriesListDiv) {
+        // api.getAllInventoryCategories, render.renderInventoryCategoriesTable, inventoryCategoriesListDiv
+        loadData(api.getAllInventoryCategories, render.renderInventoryCategoriesTable, inventoryCategoriesListDiv);
+
+        inventoryCategoriesListDiv.addEventListener('click', async (e) => {
+            e.preventDefault();
+
+            const row = e.target.closest('tr');
+            const inventory_category_id = row.dataset.id;
+            const token = JSON.parse(localStorage.getItem('token'));
+
+            if(e.target.classList.contains('delete-btn')) {
+                if(confirm("Are you sure you want to delete this inventory category?")) {
+                    try {
+                        await api.deleteInventoryCategory(inventory_category_id, token)
+                        location.reload()
+                    } catch(err) {
+                        alert(`Error: ${err.message}`)
+                    }
+                }
+            }
+        })
+    }
+
 
 
     // (AUTH) GATEKEEPERS

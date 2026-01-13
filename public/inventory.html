@@ -66,11 +66,29 @@
             <div class="main">
                 <div class="inventory-category-wrapper">
                     <div class="inventory-category-form-wrapper">
-                        <button id="create-inventory-btn">Add New Category</button>
+                        <button id="create-inventory-category-btn">Add New Category</button>
 
-                        <form id="inventory-category-form">
+                        <div class="form-wrapper">
+                            <form id="inventory-category-form">
+                                <h3 id="form-title">Create New Inventory Category</h3>
 
-                        </form>
+                                <input type="text" id="staff-id" style="display: none;">
+                                <input type="text" id="inventory-category-id" style="display: none;">
+
+                                <div class="form-item">
+                                    <label>Name</label>
+                                    <input type="text" id="inventory-category-name" placeholder="Enter inventory category name..">
+                                </div>
+
+                                <div class="form-item">
+                                    <label>Description</label>
+                                    <textarea cols="30" rows="6" id="inventory-category-description" placeholder="Enter inventory category description.." style="font-family: sans-serif;"></textarea>
+                                </div>
+
+                                <button type="submit">Submit</button>
+                                <button type="button" id="cancel-inventory-category-btn">Cancel</button>
+                            </form>
+                        </div>
                     </div>
 
                     <div id="inventory-category-list">

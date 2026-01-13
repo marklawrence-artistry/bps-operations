@@ -64,3 +64,48 @@ export function renderAccountsTable(result, container) {
 
     container.appendChild(table)
 }
+
+
+// INVENTORY
+export function renderInventoryCategoriesTable(result, container) {
+    container.innerHTML = ``;
+
+    const table = document.createElement('table')
+	table.className = 'inventory_categories table'
+    table.innerHTML = `
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    `;
+
+    const tbody = table.querySelector('tbody');
+    result.forEach(element => {
+        const row = document.createElement('tr');
+        row.dataset.id = element.id;
+        row.classname = 'inventory-category-item';
+
+        row.innerHTML = `
+            <td>${element.name}</td>
+            <td>${element.description}</td>
+            <td>
+                <div class="action-buttons">
+                    <button class='btn delete-btn'>Delete</button>
+                </div>
+            </td>
+        `;
+
+        tbody.appendChild(row);
+    });
+    if(result.length < 1) {
+        tbody.innerHTML = `
+            <td colspan="3" class="no-data" style="text-align:center;">There is no data here..</td>
+        `
+    }
+
+    container.appendChild(table)
+}

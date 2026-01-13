@@ -41,9 +41,21 @@ const deleteInventoryCategory = async (req, res) => {
         return res.status(500).json({success:false,data:`Internal Server Error: ${err.message}`});
     }
 }
+const getAllInventoryCategories = async (req, res) => {
+    try {
+        const inventory_categories = await all(`
+            SELECT id, name, description FROM inventory_categories    
+        `)
+
+        res.status(200).json({success:true,data:inventory_categories})
+    } catch(err) {
+        res.status(500).json({success:false,data:`Internal Server Error: ${err.message}`})
+    }
+}
 
 
 module.exports = {
     createInventoryCategory,
-    deleteInventoryCategory
+    deleteInventoryCategory,
+    getAllInventoryCategories
 }
