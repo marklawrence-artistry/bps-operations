@@ -1,6 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const logAudit = require('../utils/audit-logger')
+const logAudit = require('../utils/audit-logger');
 const { all, get, run } = require('../utils/db-async');
 
 const login = async (req, res) => {
@@ -111,7 +111,7 @@ const createUser = async (req, res) => {
 
         res.status(201).json({success:true,data:"User created successfully", id: result.lastID})
     } catch(err) {
-        return res.status(500).json({success:false,data:err.message})
+        return res.status(500).json({success:false,data:`Internal Server Error: ${err.message}`})
     }
 }
 
@@ -142,7 +142,7 @@ const updateUser = async (req, res) => {
 
         return res.status(200).json({success:true,data:"User updated successfully!"})
     } catch(err) {
-        return res.status(500).json({success:false,data:err.message})
+        return res.status(500).json({success:false,data:`Internal Server Error: ${err.message}`})
     }
 }
 
@@ -194,8 +194,6 @@ const disableUser = async (req, res) => {
         return res.status(500).json({success:false,data:`Internal Server Error: ${err.message}`})
     }
 }
-
-
 
 const checkSession = (req, res) => {
     res.status(200).json({
