@@ -38,7 +38,7 @@ const deleteInventoryCategory = async (req, res) => {
 
         res.status(201).json({success:true,data:`Item no.${id} deleted successfully.`});
     } catch(err) {
-        return res.status(500).json({success:false,data:`Internal Server Error: ${err.message}`});
+        res.status(500).json({success:false,data:`Internal Server Error: ${err.message}`});
     }
 }
 const getAllInventoryCategories = async (req, res) => {
@@ -66,6 +66,35 @@ const getAllInventory = async (req, res) => {
         res.status(500).json({success:false,data:`Internal Server Error: ${err.message}`})
     }
 }
+const createInventory = async (req, res) => {
+    try {
+        const { name, category_id, quantity, min_stock_level, staff_id } = req.body;
+
+        if(!req.file) {
+            return res.status(400).json({success:false,data:"No image file uploaded."});
+        }
+
+        if(!name || !category_id || !quantity || !min_stock_level) {
+            return res.status(400).json({success:false,data:"All fields required."});
+        }
+
+        const imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`
+        const query = `
+            INSERT INTO inventory (name, category_id, quantity, min_stock_level, image_url, staff_id)
+            VALUES (?, ?, ?, ?, ?, ?)
+        `;
+        const params = [name, category_id, quantity, min_stock_level, imageUrl, staff_id];
+
+        const result = await run(query, params);
+        res.status(200).json({
+            success:true,
+            data:"Inventory item successfully created.",
+            id:result.lastID
+        });
+    } catch(err) {
+        res.status(500).json({success:false,data:`Internal Server Error: ${err.message}`});
+    }
+}
 
 
 module.exports = {
@@ -73,5 +102,6 @@ module.exports = {
     deleteInventoryCategory,
     getAllInventoryCategories,
 
-    getAllInventory
+    getAllInventory,
+    createInventory
 }

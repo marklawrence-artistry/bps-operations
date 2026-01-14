@@ -142,7 +142,9 @@ export function renderInventoryTable(result, container) {
             <td>${element.category_id}</td>
             <td>${element.quantity}</td>
             <td>${element.min_stock_level}</td>
-            <td>${element.image_url}</td>
+            <td>
+                <img src=${element.image_url} style="height: 100px;">
+            </td>
             <td>
                 <div class="action-buttons">
                     <button class='btn edit-btn'>Edit</button>
