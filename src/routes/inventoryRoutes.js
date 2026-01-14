@@ -12,5 +12,7 @@ router.get('/', verifyToken, inventoryController.getAllInventory);
 router.get('/:id', verifyToken, inventoryController.getInventory);
 router.post('/', verifyToken, upload.single('image'), inventoryController.createInventory);
 router.delete('/:id', verifyToken, inventoryController.deleteInventory);
+router.put('/:id', verifyToken, upload.single('image'), inventoryController.updateInventory);
+
 
 module.exports = router;

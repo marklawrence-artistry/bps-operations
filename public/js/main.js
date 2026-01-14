@@ -308,14 +308,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const row = e.target.closest('tr');
             const inventory_id = row.dataset.id;
             const token = JSON.parse(localStorage.getItem('token'));
-
-            console.log(inventory_id)
+            console.log(row)
 
             if(e.target.classList.contains('edit-btn')) {
-                inventoryForm.reset();
                 inventoryForm.style.display = "block"
                 cancelInventoryBtn.style.display = "block"
                 inventoryForm.querySelector('.inventory-image').style.display = "block"
+                inventoryForm.reset();
 
                 const inventoryItem = await api.getInventory(inventory_id, token)
                 inventoryForm.querySelector('#form-title').innerText = "Update Existing Inventory Item"
@@ -324,10 +323,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 inventoryForm.querySelector('#inventory-category').value = inventoryItem.category_id;
                 inventoryForm.querySelector('#inventory-quantity').value = inventoryItem.quantity; 
                 inventoryForm.querySelector('#inventory-minstock').value = inventoryItem.min_stock_level;
-
-                
                 inventoryForm.querySelector('.inventory-image').src = inventoryItem.image_url;
-
                 inventoryForm.querySelector('#inventory-id').value = inventoryItem.id;
             }
 
@@ -348,10 +344,15 @@ document.addEventListener('DOMContentLoaded', () => {
         createInventoryBtn.addEventListener('click', (e) => {
             e.preventDefault();
 
-            inventoryForm.reset();
+            inventoryForm.reset(); 
+            
+            inventoryForm.querySelector('#inventory-id').value = "";
+            inventoryForm.querySelector('.inventory-image').src = "";
+            inventoryForm.querySelector('.inventory-image').style.display = "none"; 
+            inventoryForm.querySelector('#form-title').innerText = "Create New Inventory Item";
+
             inventoryForm.style.display = "block";
             cancelInventoryBtn.style.display = "block";
-            inventoryForm.querySelector('#form-title').innerText = "Create New Inventory Item";
         })
     }
     if(cancelInventoryBtn) {
@@ -382,20 +383,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 const min_stock_level = inventoryForm.querySelector('#inventory-minstock').value
                 if(min_stock_level) formData.append('min_stock_level', min_stock_level) 
 
-                const staff_id = currentAccount.id
-                if(staff_id) formData.append('staff_id', staff_id) 
-
-
                 const fileInput = inventoryForm.querySelector('#inventory-image')
                 if(fileInput.files[0]) {
                     formData.append('image', fileInput.files[0])
                 }
 
+                const staff_id = currentAccount.id
+                if(staff_id) formData.append('staff_id', staff_id) 
+
                 const id = inventoryForm.querySelector('#inventory-id').value;
                 const token = JSON.parse(localStorage.getItem('token'));
 
                 if(id) {
-                    return
+                    await api.updateInventory(formData, id, token)
+                    alert('Inventory item updated successfully!')
                 } else {
                     await api.createInventory(formData, token)
                     alert('Inventory item created successfully!')

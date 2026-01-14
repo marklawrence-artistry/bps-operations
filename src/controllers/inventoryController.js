@@ -117,12 +117,6 @@ const deleteInventory = async (req, res) => {
         res.status(500).json({success:false,data:`Internal Server Error: ${err.message}`});
     }
 }
-// 1. gawa ka muna getInventory
-// 2. gawan mo ng route getInventory
-// 3. gawan mo ng api getInventory
-// 4. add mo sa event listener ng inventory div
-
-// 5. gawa ka updateInventory, gawan mo route, gawan mo api
 const getInventory = async (req, res) => {
     try {
         const { id } = req.params;
@@ -131,10 +125,49 @@ const getInventory = async (req, res) => {
         }
 
         const item = await get(`
-            SELECT id, name, category_id, quantity, min_stock_level, staff_id, image_url FROM inventory
-        `);
+            SELECT id, name, category_id, quantity, min_stock_level, staff_id, image_url FROM inventory WHERE id = ?
+        `, [id]);
 
         res.status(201).json({success:true,data:item});
+    } catch(err) {
+        res.status(500).json({success:false,data:`Internal Server Error: ${err.message}`})
+    }
+}
+const updateInventory = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, category_id, quantity, min_stock_level, staff_id } = req.body;
+
+        if(!id) {
+            return res.status(400).json({success:false,data:"ID is required, fix your API."});
+        }
+
+        let imageUrl = null;
+
+        if(req.file) {
+            imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`
+        }
+
+        const query = `
+            UPDATE inventory 
+            SET
+                name = COALESCE(?, name),
+                category_id = COALESCE(?, category_id),
+                quantity = COALESCE(?, quantity),
+                min_stock_level = COALESCE(?, min_stock_level),
+                image_url = COALESCE(?, image_url),
+                staff_id = COALESCE(?, staff_id)
+            WHERE id = ?
+        `;
+        const params = [name, category_id, quantity, min_stock_level, imageUrl, staff_id, id]
+
+        const result = await run(query, params)
+
+        res.status(200).json({
+            success:true,
+            data:"Inventory item successfully updated.",
+            id:result.lastID
+        });
     } catch(err) {
         res.status(500).json({success:false,data:`Internal Server Error: ${err.message}`})
     }
@@ -149,5 +182,6 @@ module.exports = {
     getAllInventory,
     createInventory,
     deleteInventory,
-    getInventory
+    getInventory,
+    updateInventory
 }

@@ -264,3 +264,20 @@ export async function getInventory(id, token) {
 
     return result.data;
 }
+// (INVENTORY) Update Inventory
+export async function updateInventory(formData, id, token) {
+    const response = await fetch(`/api/inventory/${id}`, {
+        method: 'PUT',
+        headers: {
+            'Authorization' : `Bearer ${token}`
+        },
+        body: formData
+    })
+
+    const result = await response.json()
+    if(!result.success) {
+        throw new Error(result.data)
+    }
+
+    return result.data
+}
