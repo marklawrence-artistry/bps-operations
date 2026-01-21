@@ -10,56 +10,149 @@
     <div class="content">
         <div class="sidebar">
             <div class="sidebar-header">
-                <h1>Welcome</h1>
-                <p>BPS Records Management System</p>
+                <img src="logo/Bicodo Postal Services Logo.png" alt="BPS Logo">
+                <h2>Welcome Back!</h2>
+                <p>BPS Operations System</p>
             </div>
 
             <div class="sidebar-content">
+                <div class="nav-label">Overview</div>
                 <a class="nav-item active" href="dashboard.html">
-                    <img src="../">
-                    <label>Dashboard</label>
+                    <img src="Icons/Sidebar-Navigation Bar (All Pages)/dashboard-icon.png" alt="dashboard">
+                    <span>Dashboard</span>
                 </a>
                 <a class="nav-item" href="audit-log.html">
-                    <img src="../">
-                    <label>Audit Log</label>
+                    <img src="Icons/Sidebar-Navigation Bar (All Pages)/audit_log_icon.png" alt="audit-log">
+                    <span>Audit Log</span>
                 </a>
+
+                <div class="nav-label">Staff</div>
                 <a class="nav-item" href="inventory.html">
-                    <img src="../">
-                    <label>Inventory</label>
-                </a>
-                <a class="nav-item" href="reports.html">
-                    <img src="../">
-                    <label>Reports</label>
+                    <img src="Icons/Sidebar-Navigation Bar (All Pages)/inventory_icon.png" alt="inventory">
+                    <span>Inventory</span>
                 </a>
                 <a class="nav-item" href="sellers.html">
-                    <img src="../">
-                    <label>Sellers</label>
+                    <img src="Icons/Sidebar-Navigation Bar (All Pages)/sellers_icon.png" alt="sellers">
+                    <span>Sellers</span>
                 </a>
                 <a class="nav-item" href="rts.html">
-                    <img src="../">
-                    <label>Returned-to-Seller</label>
+                    <img src="Icons/Sidebar-Navigation Bar (All Pages)/returned_icon.png" alt="rts">
+                    <span>Returned-to-Seller</span>
                 </a>
                 <a class="nav-item" href="documents.html">
-                    <img src="../">
-                    <label>Documents</label>
+                    <img src="Icons/Sidebar-Navigation Bar (All Pages)/document_icon.png" alt="documents">
+                    <span>Documents</span>
                 </a>
+
+                <div class="nav-label">Admin</div>
                 <a class="nav-item admin-nav" href="sales.html">
-                    <img src="../">
-                    <label>Sales</label>
+                    <img src="Icons/Sidebar-Navigation Bar (All Pages)/sales_icon.png" alt="sales">
+                    <span>Sales</span>
                 </a>
                 <a class="nav-item admin-nav" href="accounts.html">
-                    <img src="../">
-                    <label>Accounts</label>
+                    <img src="Icons/Sidebar-Navigation Bar (All Pages)/accounts_icon.png" alt="accounts">
+                    <span>Accounts</span>
                 </a>
             </div>
 
             <div class="sidebar-footer">
-                <button id="logout-button">Logout</button>
+                <a class="nav-item" href="#" id="logout-button">
+                    <img src="Icons/Sidebar-Navigation Bar (All Pages)/sign-out.png" alt="Log out">
+                    <span>Log out</span>
+                </a>
             </div>
         </div>
 
         <div class="main-content">
-            <h1>Welcome</h1>
+            <div class="main-header">
+                <div class="header-title-group">
+                    <h1>Overview</h1>
+                </div>
+                <div class="user-info">
+                    <h4>Username</h4>
+                    <p>Role</p>
+                </div>
+            </div>
+
+            <div class="main">
+                <div class="overview-grid">
+                    <div class="stat-card">
+                        <div class="stat-content">
+                            <h3>Total no. of <br><strong>Low Stocks</strong></h3>
+                            <div class="stat-value">120+</div>
+                        </div>
+                        <img src="Icons/Dashboard Page/low_stocks_icon.png" alt="">
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-content">
+                            <h3>Total sales of <br><strong>January</strong></h3>
+                            <div class="stat-value">8,475k</div>
+                        </div>
+                        <img src="Icons/Dashboard Page/total_sales_icon.png" alt="">
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-content">
+                            <h3>Total no. of <br><strong>Sellers</strong></h3>
+                            <div class="stat-value">120+</div>
+                        </div>
+                        <img src="Icons/Dashboard Page/total_sellers_icon.png" alt="">
+                    </div>
+                </div>
+
+                <div class="chart-section">
+                    <div class="chart-header">
+                        <div class="chart-title-group">
+                            <h2>Average Sales per Month</h2>
+                            <p>Grand Total: 475k</p>
+                        </div>
+                        <div class="chart-total">400k+</div>
+                    </div>
+                    <div class="chart-container">
+                        <!-- Chart will be rendered here via JS -->
+                        <canvas id="salesChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Low Stock Widget -->
+                <div class="low-stock-section">
+                    <div class="section-header">
+                        <h2>Low Stock Items</h2>
+                        <a href="inventory.html" class="view-all">View All</a>
+                    </div>
+                    <div class="table-container">
+                        <table class="table dashboard-table">
+                            <thead>
+                                <tr>
+                                    <th>Item Name</th>
+                                    <th>Category</th>
+                                    <th>Quantity</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Parcel Tape</td>
+                                    <td>Packaging</td>
+                                    <td>12</td>
+                                    <td><span class="status-badge low">Low</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Bubble Wrap</td>
+                                    <td>Packaging</td>
+                                    <td>5</td>
+                                    <td><span class="status-badge critical">Critical</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Cardboard Boxes</td>
+                                    <td>Shipping</td>
+                                    <td>8</td>
+                                    <td><span class="status-badge low">Low</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 

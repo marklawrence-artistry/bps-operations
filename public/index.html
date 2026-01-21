@@ -9,23 +9,39 @@
 <body>
     <div class="container">
         <div class="image-area">
-
+            <h1>BPS OPERATION<br>MANAGEMENT<br>SYSTEM</h1>
+            <p>Log in to access the BPS system, built for security and accountability.</p>
         </div>
 
         <div class="form-area">
             <form id="login-form">
-                <h1>Login</h1>
-                <p>Welcome to BPS Records Management System.</p>
-                <div class="form-item">
-                    <label>Email</label>
-                    <input type="email" id="login-email" placeholder="Enter your email...">
+                <div class="logo-container">
+                    <img src="logo/Bicodo Postal Services Logo.png" alt="BPS Logo">
                 </div>
+                
+                <h1>Welcome Back!</h1>
+                
                 <div class="form-item">
-                    <label>Password</label>
-                    <input type="password" id="login-password" placeholder="Enter your password...">
+                    <label for="login-email">Email Address</label>
+                    <div class="input-wrapper">
+                        <img src="Icons/Log in Page/email_icon.png" alt="">
+                        <input type="email" id="login-email" placeholder="Enter your email" >
+                    </div>
                 </div>
-                <button type="submit">Submit</button>
-                <button onclick="location.href = 'register.html'">Register</button>
+
+                <div class="form-item">
+                    <label for="login-password">Password</label>
+                    <div class="input-wrapper">
+                        <img src="Icons/Log in Page/password_icon.png" alt="">
+                        <input type="password" id="login-password" placeholder="Enter your password">
+                    </div>
+                </div>
+
+                <div class="forgot-password">
+                    <a href="#">Forgot password?</a>
+                </div>
+
+                <button type="submit">Log in</button>
             </form>
         </div>
     </div>
