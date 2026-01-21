@@ -96,11 +96,11 @@ const initDB = () => {
                 CREATE TABLE IF NOT EXISTS seller (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT NOT NULL,
-                    category TEXT, -- 'Shoes', 'Gadgets'
+                    category TEXT,
                     contact_num TEXT,
                     email TEXT,
                     image_path TEXT,
-                    platform_name TEXT, -- 'Shopee', 'Lazada', 'TikTok'
+                    platform_name TEXT,
                     staff_id INTEGER,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (staff_id) REFERENCES users(id)
