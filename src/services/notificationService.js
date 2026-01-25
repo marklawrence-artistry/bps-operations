@@ -2,92 +2,80 @@ const SibApiV3Sdk = require('@sendinblue/client');
 const { all, run } = require('../utils/db-async');
 
 const checkExpiringDocuments = async () => {
-    console.log('Running scheduled task: Checking for expiring documents...');
+    console.log('--- RUNNING DAILY DOCUMENT CHECK ---');
 
-    // Configure Brevo API
-    let defaultClient = SibApiV3Sdk.ApiClient.instance;
-    let apiKey = defaultClient.authentications['api-key'];
-    apiKey.apiKey = process.env.BREVO_API_KEY;
+    // 1. VALIDATE ENV VARIABLES
+    if (!process.env.BREVO_API_KEY) {
+        console.error("SKIPPING: Missing BREVO_API_KEY in .env");
+        return;
+    }
 
+    // 2. CONFIGURE BREVO
     const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+    apiInstance.setApiKey(
+        SibApiV3Sdk.TransactionalEmailsApiApiKeys.apiKey, 
+        process.env.BREVO_API_KEY
+    );
     
-    // SQL to find documents expiring in 30 or 7 days that we haven't sent a notification for yet.
+    // 3. STRICT PRODUCTION QUERY
+    // Only selects documents expiring in EXACTLY 30 days or 7 days
+    // AND ensures we haven't already logged a notification for them.
     const query = `
-        SELECT 
-            d.id, 
-            d.title, 
-            d.expiry_date
+        SELECT d.id, d.title, d.expiry_date
         FROM documents d
         WHERE 
-            (
-                -- Check for 30-day warning
-                date(d.expiry_date) = date('now', '+30 days') AND
-                NOT EXISTS (
-                    SELECT 1 FROM notification_logs nl 
-                    WHERE nl.document_id = d.id AND nl.trigger_type = '30_day_warning'
-                )
-            ) OR (
-                -- Check for 7-day warning
-                date(d.expiry_date) = date('now', '+7 days') AND
-                NOT EXISTS (
-                    SELECT 1 FROM notification_logs nl 
-                    WHERE nl.document_id = d.id AND nl.trigger_type = '7_day_warning'
-                )
-            )
+            (date(d.expiry_date) = date('now', '+30 days') 
+            AND NOT EXISTS (SELECT 1 FROM notification_logs nl WHERE nl.document_id = d.id AND nl.trigger_type = '30_day_warning'))
+        OR 
+            (date(d.expiry_date) = date('now', '+7 days') 
+            AND NOT EXISTS (SELECT 1 FROM notification_logs nl WHERE nl.document_id = d.id AND nl.trigger_type = '7_day_warning'))
     `;
 
     try {
         const documents = await all(query);
+
         if (documents.length === 0) {
-            console.log('No documents require notification today.');
+            console.log('No expiring documents found today.');
             return;
         }
+
+        console.log(`Found ${documents.length} documents expiring soon.`);
 
         for (const doc of documents) {
             const today = new Date();
             const expiryDate = new Date(doc.expiry_date);
-            const daysUntilExpiry = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
-            
-            let triggerType = '';
-            if (daysUntilExpiry <= 7) {
-                triggerType = '7_day_warning';
-            } else if (daysUntilExpiry <= 30) {
-                triggerType = '30_day_warning';
-            }
+            const diffTime = expiryDate - today;
+            const daysUntilExpiry = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
 
-            console.log(`Sending ${triggerType} for document: ${doc.title}`);
-
-            // Define the email
+            // Prepare Email
             const sendSmtpEmail = {
-                to: [{ email: 'markyliherr@gmail.com', name: 'BPS Admin' }], // The recipient
-                sender: { email: 'marklawrencecatubay@gmail.com', name: 'BPS System' }, // IMPORTANT: Use an authorized sender email
-                subject: `❗ Document Expiry Warning: ${doc.title}`,
+                to: [{ email: process.env.ADMIN_EMAIL, name: 'BPS Admin' }], 
+                sender: { email: process.env.SENDER_EMAIL, name: process.env.SENDER_NAME || 'BPS System' }, 
+                subject: `[BPS ALERT] Document Expiry: ${doc.title}`,
                 htmlContent: `
-                    <h1>Document Expiry Alert</h1>
-                    <p>This is an automated notification from the BPS Records Management System.</p>
-                    <p>The following document is approaching its expiration date:</p>
-                    <ul>
-                        <li><strong>Document:</strong> ${doc.title}</li>
-                        <li><strong>Expires On:</strong> ${doc.expiry_date}</li>
-                        <li><strong>Days Remaining:</strong> ${daysUntilExpiry}</li>
-                    </ul>
-                    <p>Please take the necessary action to renew it.</p>
+                    <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+                        <h2 style="color: #d35400;">Document Expiration Warning</h2>
+                        <p>The document <strong>${doc.title}</strong> is expiring soon.</p>
+                        <hr>
+                        <p><strong>Expiry Date:</strong> ${doc.expiry_date}</p>
+                        <p><strong>Days Remaining:</strong> ${daysUntilExpiry} days</p>
+                        <br>
+                        <p style="font-size: 12px; color: #888;">This is an automated system notification.</p>
+                    </div>
                 `
             };
 
-            // Send the email
+            // Send Email
             await apiInstance.sendTransacEmail(sendSmtpEmail);
-            
-            // Log that the notification was sent to prevent duplicates
-            await run(
-                'INSERT INTO notification_logs (document_id, trigger_type) VALUES (?, ?)',
-                [doc.id, triggerType]
-            );
+            console.log(`✅ Email sent for: ${doc.title}`);
 
-            console.log(`Notification sent successfully for document ID ${doc.id}`);
+            // Log to Database (Prevents duplicate emails tomorrow)
+            const triggerType = daysUntilExpiry <= 10 ? '7_day_warning' : '30_day_warning';
+            await run('INSERT INTO notification_logs (document_id, trigger_type) VALUES (?, ?)', [doc.id, triggerType]);
         }
     } catch (error) {
-        console.error('Error in notification service:', error.response ? error.response.body : error);
+        console.error("❌ Notification Service Error:", error.message);
+        if(error.response) console.error(error.response.body);
     }
 };
 

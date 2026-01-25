@@ -81,6 +81,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const dashboardTable = document.querySelector('.dashboard-table');
     const salesChartCanvas = document.querySelector('#salesChart');
 
+    // AUDIT LOG
+    const auditListDiv = document.querySelector('#audit-list');
+
 
 
     // *********** HELPER FUNCTIONS *************
@@ -754,6 +757,49 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         })();
     }
+    // *********** DASHBOARD LOGIC *************
+    if (document.querySelector('.stat-card')) { // Check if we are on dashboard page
+        try {
+            const token = JSON.parse(localStorage.getItem('token'));
+            
+            // 1. Load Low Stock Table
+            loadData(api.getLowStockItems, render.renderLowStockWidget, dashboardTable);
+
+            // 2. Load Stats & Chart
+            const stats = await api.getDashboardStats(token);
+
+            // Update KPI Cards (Targeting via index or specific selectors)
+            const statValues = document.querySelectorAll('.stat-value');
+            if(statValues.length >= 3) {
+                // Low Stock Card
+                statValues[0].innerText = stats.lowStockCount;
+                
+                // Sales Card (Format as Currency)
+                statValues[1].innerText = new Intl.NumberFormat('en-PH', { 
+                    style: 'currency', 
+                    currency: 'PHP',
+                    maximumFractionDigits: 0 
+                }).format(stats.salesMonthTotal);
+                
+                // Sellers Card
+                statValues[2].innerText = stats.sellerCount;
+            }
+
+            // Update Chart Text
+            const chartTotalEl = document.querySelector('.chart-total');
+            if(chartTotalEl) {
+                chartTotalEl.innerText = new Intl.NumberFormat('en-PH', { 
+                    style: 'currency', currency: 'PHP' 
+                }).format(stats.chart.grandTotal);
+            }
+
+            // Render Chart
+            renderSalesChart(stats.chart);
+
+        } catch (err) {
+            console.error("Dashboard Load Error:", err);
+        }
+    }
 
 
 
@@ -844,6 +890,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+    
+
+
+
+
+
+
 
 
 
@@ -860,6 +913,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const id = row.dataset.id;
             const token = JSON.parse(localStorage.getItem('token'));
 
+            // DELETE
             if (e.target.classList.contains('delete-btn')) {
                 if (confirm('Are you sure you want to delete this document record?')) {
                     try {
@@ -868,6 +922,39 @@ document.addEventListener('DOMContentLoaded', () => {
                     } catch (err) { alert(`Error: ${err.message}`); }
                 }
             }
+
+            // EDIT (NEW FUNCTIONALITY)
+            if (e.target.classList.contains('edit-btn')) {
+                // Prevent "View" link default behavior if it's the edit button
+                e.preventDefault(); 
+                
+                // Note: In render.js, the 'edit-btn' is actually a 'View' link. 
+                // We need to change render.js to have a separate Edit button. 
+                // SEE STEP 2 BELOW.
+            }
+
+            // EDIT LOGIC (Actual)
+            if (e.target.classList.contains('real-edit-btn')) {
+                documentForm.reset();
+                documentForm.style.display = 'block';
+                cancelDocumentBtn.style.display = 'block';
+                documentForm.querySelector('#form-title').innerText = "Update Document";
+                
+                // Set the ID in the hidden field
+                documentForm.querySelector('#document-id').value = id;
+
+                // Populate form from table data (or fetch from API if data isn't in DOM)
+                const cells = row.querySelectorAll('td');
+                // Assuming render order: Title, Category, Date, Status, Actions
+                documentForm.querySelector('#document-title').value = cells[0].innerText;
+                documentForm.querySelector('#document-category').value = cells[1].innerText;
+                documentForm.querySelector('#document-expiry').value = cells[2].innerText;
+
+                // Hide file input for edit mode (optional, or make it optional)
+                documentForm.querySelector('#document-file').removeAttribute('required');
+                const label = documentForm.querySelector('label[for="document-file"]');
+                if(label) label.innerText = "Upload File (Leave empty to keep current)";
+            }
         });
     }
     if (createDocumentBtn) {
@@ -875,39 +962,82 @@ document.addEventListener('DOMContentLoaded', () => {
             documentForm.reset();
             documentForm.style.display = 'block';
             cancelDocumentBtn.style.display = 'block';
-        });
-    }
-    if (cancelDocumentBtn) {
-        cancelDocumentBtn.addEventListener('click', () => {
-            documentForm.style.display = 'none';
-            cancelDocumentBtn.style.display = 'none';
+            documentForm.querySelector('#form-title').innerText = "Upload New Document";
+            documentForm.querySelector('#document-id').value = ""; // Clear ID
+            
+            // Make file required for new
+            documentForm.querySelector('#document-file').setAttribute('required', 'true');
+            const label = documentForm.querySelector('label[for="document-file"]');
+            if(label) label.innerText = "Upload File";
         });
     }
     if (documentForm) {
         documentForm.addEventListener('submit', async e => {
             e.preventDefault();
             const token = JSON.parse(localStorage.getItem('token'));
-            const formData = new FormData();
-            formData.append('title', documentForm.querySelector('#document-title').value);
-            formData.append('category', documentForm.querySelector('#document-category').value);
-            formData.append('expiry_date', documentForm.querySelector('#document-expiry').value);
-            
-            const fileInput = documentForm.querySelector('#document-file');
-            if (fileInput.files[0]) {
-                formData.append('document', fileInput.files[0]);
-            } else {
-                alert('Please select a file to upload.');
-                return;
-            }
+            const id = documentForm.querySelector('#document-id').value;
 
-            try {
-                await api.createDocument(formData, token);
-                alert('Document uploaded successfully!');
-                location.reload();
-            } catch (err) { alert(`Error: ${err.message}`); }
+            if (id) {
+                // UPDATE MODE (JSON)
+                const data = {
+                    title: documentForm.querySelector('#document-title').value,
+                    category: documentForm.querySelector('#document-category').value,
+                    expiry_date: documentForm.querySelector('#document-expiry').value
+                };
+
+                try {
+                    await api.updateDocument(id, data, token);
+                    alert('Document updated successfully!');
+                    location.reload();
+                } catch (err) { alert(`Error: ${err.message}`); }
+
+            } else {
+                // CREATE MODE (FormData)
+                const formData = new FormData();
+                formData.append('title', documentForm.querySelector('#document-title').value);
+                formData.append('category', documentForm.querySelector('#document-category').value);
+                formData.append('expiry_date', documentForm.querySelector('#document-expiry').value);
+                
+                const fileInput = documentForm.querySelector('#document-file');
+                if (fileInput.files[0]) {
+                    formData.append('document', fileInput.files[0]);
+                } else {
+                    alert('Please select a file to upload.');
+                    return;
+                }
+
+                try {
+                    await api.createDocument(formData, token);
+                    alert('Document uploaded successfully!');
+                    location.reload();
+                } catch (err) { alert(`Error: ${err.message}`); }
+            }
         });
     }
 
+
+
+
+
+
+    // *********** AUDIT LOGS *************
+    if (auditListDiv) {
+        loadData(api.getAuditLogs, render.renderAuditLogTable, auditListDiv);
+        
+        // Optional: Simple client-side search/filter
+        const searchInput = document.querySelector('#audit-search');
+        if(searchInput) {
+            searchInput.addEventListener('keyup', (e) => {
+                const term = e.target.value.toLowerCase();
+                const rows = auditListDiv.querySelectorAll('tbody tr');
+                
+                rows.forEach(row => {
+                    const text = row.innerText.toLowerCase();
+                    row.style.display = text.includes(term) ? '' : 'none';
+                });
+            });
+        }
+    }
 
 
 

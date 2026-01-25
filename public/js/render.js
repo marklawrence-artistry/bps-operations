@@ -442,3 +442,64 @@ export function renderLowStockWidget(result, container) {
         tbody.appendChild(row);
     });
 }
+
+
+
+
+
+
+
+// AUDIT LOGS TABLE
+export function renderAuditLogTable(result, container) {
+    container.innerHTML = ``;
+    const table = document.createElement('table');
+    table.className = 'audit table';
+    table.innerHTML = `
+        <thead>
+            <tr>
+                <th>Date & Time</th>
+                <th>User</th>
+                <th>Action</th>
+                <th>Target</th>
+                <th>Description</th>
+                <th>IP Address</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    `;
+
+    const tbody = table.querySelector('tbody');
+    result.forEach(element => {
+        const row = document.createElement('tr');
+        
+        // Format Date
+        const dateObj = new Date(element.created_at);
+        const dateString = dateObj.toLocaleDateString() + ' ' + dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+        // Badge Color Logic
+        let badgeClass = 'low'; // Default yellow
+        if (element.action_type === 'CREATE') badgeClass = 'active'; // Green
+        if (element.action_type === 'DELETE') badgeClass = 'critical'; // Red
+        if (element.action_type === 'LOGIN') badgeClass = ''; // Default gray-ish (custom style below if needed)
+
+        // Custom style for badge if it's LOGIN (since you only have low/active/critical in CSS)
+        let badgeStyle = '';
+        if (element.action_type === 'LOGIN') badgeStyle = 'style="background-color:#e5e7eb; color:#374151;"';
+        if (element.action_type === 'UPDATE') badgeStyle = 'style="background-color:#dbeafe; color:#1e40af;"';
+
+        row.innerHTML = `
+            <td style="font-size:0.85rem; color:#6b7280;">${dateString}</td>
+            <td><strong>${element.username || 'Unknown'}</strong></td>
+            <td><span class="status-badge ${badgeClass}" ${badgeStyle}>${element.action_type}</span></td>
+            <td>${element.table_name} <span style="font-size:0.8rem; color:#999;">(ID: ${element.record_id || '-'})</span></td>
+            <td>${element.description}</td>
+            <td style="font-family: monospace; font-size: 0.8rem;">${element.ip_address || '::1'}</td>
+        `;
+        tbody.appendChild(row);
+    });
+
+    if(result.length < 1) {
+        tbody.innerHTML = `<td colspan="6" class="no-data" style="text-align:center; padding: 2rem;">No activity recorded yet.</td>`;
+    }
+    container.appendChild(table);
+}

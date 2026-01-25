@@ -10,56 +10,96 @@
     <div class="content">
         <div class="sidebar">
             <div class="sidebar-header">
-                <h1>Welcome</h1>
+                <img src="logo/Bicodo Postal Services Logo.png" alt="BPS Logo">
+                <h2>Welcome Back!</h2>
                 <p>BPS Records Management System</p>
             </div>
 
             <div class="sidebar-content">
+                <div class="nav-label">Overview</div>
                 <a class="nav-item" href="dashboard.html">
-                    <img src="../">
-                    <label>Dashboard</label>
+                    <img src="Icons/Sidebar-Navigation Bar (All Pages)/dashboard-icon.png" alt="Dashboard">
+                    <span>Dashboard</span>
                 </a>
                 <a class="nav-item active" href="audit-log.html">
-                    <img src="../">
-                    <label>Audit Log</label>
+                    <img src="Icons/Sidebar-Navigation Bar (All Pages)/audit_log_icon.png" alt="Audit Log">
+                    <span>Audit Log</span>
                 </a>
+
+                <div class="nav-label">Staff</div>
                 <a class="nav-item" href="inventory.html">
-                    <img src="../">
-                    <label>Inventory</label>
-                </a>
-                <a class="nav-item" href="reports.html">
-                    <img src="../">
-                    <label>Reports</label>
+                    <img src="Icons/Sidebar-Navigation Bar (All Pages)/inventory_icon.png" alt="Inventory">
+                    <span>Inventory</span>
                 </a>
                 <a class="nav-item" href="sellers.html">
-                    <img src="../">
-                    <label>Sellers</label>
+                    <img src="Icons/Sidebar-Navigation Bar (All Pages)/sellers_icon.png" alt="Sellers">
+                    <span>Sellers</span>
                 </a>
+
                 <a class="nav-item" href="rts.html">
-                    <img src="../">
-                    <label>Returned-to-Seller</label>
+                    <img src="Icons/Sidebar-Navigation Bar (All Pages)/returned_icon.png" alt="Returned-to-Seller">
+                    <span>Returned-to-Seller</span>
                 </a>
                 <a class="nav-item" href="documents.html">
-                    <img src="../">
-                    <label>Documents</label>
+                    <img src="Icons/Sidebar-Navigation Bar (All Pages)/document_icon.png" alt="Documents">
+                    <span>Documents</span>
                 </a>
+
+                <div class="nav-label">Admin</div>
                 <a class="nav-item admin-nav" href="sales.html">
-                    <img src="../">
-                    <label>Sales</label>
+                    <img src="Icons/Sidebar-Navigation Bar (All Pages)/sales_icon.png" alt="Sales">
+                    <span>Sales</span>
                 </a>
                 <a class="nav-item admin-nav" href="accounts.html">
-                    <img src="../">
-                    <label>Accounts</label>
+                    <img src="Icons/Sidebar-Navigation Bar (All Pages)/accounts_icon.png" alt="Accounts">
+                    <span>Accounts</span>
                 </a>
             </div>
 
             <div class="sidebar-footer">
-                <button id="logout-button">Logout</button>
+                <a class="nav-item" href="#" id="logout-button">
+                    <img src="Icons/Sidebar-Navigation Bar (All Pages)/sign-out.png" alt="Log out">
+                    <span>Log out</span>
+                </a>
             </div>
         </div>
 
         <div class="main-content">
-            <h1>Welcome - Audit Log</h1>
+            <div class="main-header">
+                <h1>System Audit Log</h1>
+                <div class="user-info">
+                    <h4>Username</h4>
+                    <p>Role</p>
+                </div>
+            </div>
+
+            <div class="main">
+                <div class="account-actions">
+                    <div class="search-box">
+                        <img src="Icons/Manage User Acc Page/search_icon.png" alt="Search">
+                        <input type="text" id="audit-search" placeholder="Search logs...">
+                    </div>
+                    <!-- No 'Add' button needed for logs -->
+                </div>
+
+                <div class="main-content-layout">
+                    <div class="table-section" style="width: 100%;">
+                        <div class="table-card">
+                            <div id="audit-list">
+                                <!-- Audit table will be rendered here -->
+                            </div>
+                        </div>
+
+                        <div class="pagination">
+                            <button class="page-arrow prev">&lt;</button>
+                            <span class="page-numbers">
+                                <span class="page-num active">1</span>
+                            </span>
+                            <button class="page-arrow next">&gt;</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 

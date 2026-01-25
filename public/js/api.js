@@ -463,22 +463,9 @@ export async function getRTS(id, token) {
 // -----------------------------------------------------------
 // DASHBOARD API
 
-// (DASHBOARD) Get Low Stock Items
-export async function getLowStockItems(token) {
-    const response = await fetch('/api/dashboard/low-stock', {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        }
-    });
-    const result = await response.json();
-    if(!result.success) throw new Error(result.data);
-    return result.data;
-}
-// (DASHBOARD) Get Sales Chart Data
-export async function getSalesChartData(token) {
-    const response = await fetch('/api/dashboard/sales-chart', {
+// (DASHBOARD) Get Main Stats (KPIs + Chart)
+export async function getDashboardStats(token) {
+    const response = await fetch('/api/dashboard/stats', {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',
@@ -604,5 +591,42 @@ export async function deleteDocument(id, token) {
     });
     const result = await response.json();
     if(!result.success) throw new Error(result.data);
+    return result.data;
+}
+// (DOCUMENTS) Update Document (JSON body for metadata updates)
+export async function updateDocument(id, data, token) {
+    const response = await fetch(`/api/documents/${id}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json', // Important: We are sending JSON, not FormData
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(data)
+    });
+    const result = await response.json();
+    if(!result.success) throw new Error(result.data);
+    return result.data;
+}
+
+
+
+
+
+
+// (AUDIT) Get All Logs
+export async function getAuditLogs(token) {
+    const response = await fetch('/api/audit', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        }
+    });
+
+    const result = await response.json();
+    if(!result.success) {
+        throw new Error(result.data);
+    }
+
     return result.data;
 }
