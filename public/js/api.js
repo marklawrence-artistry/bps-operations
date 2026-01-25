@@ -451,3 +451,158 @@ export async function getRTS(id, token) {
     if(!result.success) throw new Error(result.data);
     return result.data;
 }
+
+
+
+
+
+
+
+
+
+// -----------------------------------------------------------
+// DASHBOARD API
+
+// (DASHBOARD) Get Low Stock Items
+export async function getLowStockItems(token) {
+    const response = await fetch('/api/dashboard/low-stock', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        }
+    });
+    const result = await response.json();
+    if(!result.success) throw new Error(result.data);
+    return result.data;
+}
+// (DASHBOARD) Get Sales Chart Data
+export async function getSalesChartData(token) {
+    const response = await fetch('/api/dashboard/sales-chart', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        }
+    });
+    const result = await response.json();
+    if(!result.success) throw new Error(result.data);
+    return result.data;
+}
+
+
+
+
+
+
+
+
+// -----------------------------------------------------------
+// SALES API (JSON)
+
+// (SALES) Get All
+export async function getAllSales(token) {
+    const response = await fetch('/api/sales', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        }
+    });
+    const result = await response.json();
+    if(!result.success) throw new Error(result.data);
+    return result.data;
+}
+// (SALES) Create
+export async function createSale(data, token) {
+    const response = await fetch('/api/sales', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(data)
+    });
+    const result = await response.json();
+    if(!result.success) throw new Error(result.data);
+    return result.data;
+}
+// (SALES) Update
+export async function updateSale(id, data, token) {
+    const response = await fetch(`/api/sales/${id}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(data)
+    });
+    const result = await response.json();
+    if(!result.success) throw new Error(result.data);
+    return result.data;
+}
+// (SALES) Delete
+export async function deleteSale(id, token) {
+    const response = await fetch(`/api/sales/${id}`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        }
+    });
+    const result = await response.json();
+    if(!result.success) throw new Error(result.data);
+    return result.data;
+}
+
+
+
+
+
+
+
+
+
+
+// -----------------------------------------------------------
+// DOCUMENTS API (FormData for File Uploads)
+
+// (DOCUMENTS) Get All
+export async function getAllDocuments(token) {
+    const response = await fetch('/api/documents', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        }
+    });
+    const result = await response.json();
+    if(!result.success) throw new Error(result.data);
+    return result.data;
+}
+// (DOCUMENTS) Create
+export async function createDocument(formData, token) {
+    const response = await fetch('/api/documents', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`
+        },
+        body: formData
+    });
+    const result = await response.json();
+    if(!result.success) throw new Error(result.data);
+    return result.data;
+}
+// (DOCUMENTS) Delete
+export async function deleteDocument(id, token) {
+    const response = await fetch(`/api/documents/${id}`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        }
+    });
+    const result = await response.json();
+    if(!result.success) throw new Error(result.data);
+    return result.data;
+}

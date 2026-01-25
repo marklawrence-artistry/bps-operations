@@ -3,6 +3,35 @@ import * as render from './render.js'
 
 let currentAccount = null;
 
+function renderSalesChart(chartData) {
+    const ctx = document.getElementById('salesChart');
+    if (!ctx) return;
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: chartData.labels,
+            datasets: [{
+                label: 'Monthly Sales',
+                data: chartData.data,
+                backgroundColor: 'rgba(46, 59, 151, 0.8)',
+                borderColor: 'rgba(46, 59, 151, 1)',
+                borderWidth: 1,
+                borderRadius: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
 
 
@@ -35,6 +64,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const rtsForm = document.querySelector('#rts-form');
     const createRtsBtn = document.querySelector('#create-rts-btn');
     const cancelRtsBtn = document.querySelector('#cancel-rts-btn');
+
+    // SALES
+    const salesListDiv = document.querySelector('#sales-list');
+    const saleForm = document.querySelector('#sale-form');
+    const createSaleBtn = document.querySelector('#create-sale-btn');
+    const cancelSaleBtn = document.querySelector('#cancel-sale-btn');
+
+    // DOCUMENTS
+    const documentListDiv = document.querySelector('#document-list');
+    const documentForm = document.querySelector('#document-form');
+    const createDocumentBtn = document.querySelector('#create-document-btn');
+    const cancelDocumentBtn = document.querySelector('#cancel-document-btn');
+
+    // DASHBOARD
+    const dashboardTable = document.querySelector('.dashboard-table');
+    const salesChartCanvas = document.querySelector('#salesChart');
 
 
 
@@ -686,6 +731,185 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+
+
+
+
+
+
+   // *********** DASHBOARD LOGIC *************
+    if (dashboardTable) {
+        loadData(api.getLowStockItems, render.renderLowStockWidget, dashboardTable);
+    }
+    if (salesChartCanvas) {
+        // We can't use the loadData helper here because the render function is different
+        (async () => {
+            try {
+                const token = JSON.parse(localStorage.getItem('token'));
+                const result = await api.getSalesChartData(token);
+                renderSalesChart(result);
+            } catch (err) {
+                console.error("Failed to load chart data:", err);
+            }
+        })();
+    }
+
+
+
+
+
+
+
+
+
+
+    // *********** SALES MANAGEMENT *************
+    if (salesListDiv) {
+        loadData(api.getAllSales, render.renderSalesTable, salesListDiv);
+
+        salesListDiv.addEventListener('click', async e => {
+            const row = e.target.closest('tr');
+            if (!row) return;
+            const id = row.dataset.id;
+            const token = JSON.parse(localStorage.getItem('token'));
+
+            if (e.target.classList.contains('delete-btn')) {
+                if (confirm('Delete this sales record? This cannot be undone.')) {
+                    try {
+                        await api.deleteSale(id, token);
+                        location.reload();
+                    } catch (err) { alert(`Error: ${err.message}`); }
+                }
+            }
+
+            if (e.target.classList.contains('edit-btn')) {
+                saleForm.reset();
+                saleForm.style.display = 'block';
+                cancelSaleBtn.style.display = 'block';
+                saleForm.querySelector('#form-title').innerText = 'Update Sales Record';
+
+                // Populate form from data attributes
+                saleForm.querySelector('#sale-id').value = id;
+                saleForm.querySelector('#sale-start-date').value = row.dataset.startDate;
+                saleForm.querySelector('#sale-end-date').value = row.dataset.endDate;
+                saleForm.querySelector('#sale-amount').value = row.dataset.amount;
+                saleForm.querySelector('#sale-notes').value = row.dataset.notes;
+            }
+        });
+    }
+    if (createSaleBtn) {
+        createSaleBtn.addEventListener('click', () => {
+            saleForm.reset();
+            saleForm.style.display = 'block';
+            cancelSaleBtn.style.display = 'block';
+            saleForm.querySelector('#form-title').innerText = 'Add New Sales Record';
+            saleForm.querySelector('#sale-id').value = '';
+        });
+    }
+    if (cancelSaleBtn) {
+        cancelSaleBtn.addEventListener('click', () => {
+            saleForm.style.display = 'none';
+            cancelSaleBtn.style.display = 'none';
+        });
+    }
+    if (saleForm) {
+        saleForm.addEventListener('submit', async e => {
+            e.preventDefault();
+            const id = saleForm.querySelector('#sale-id').value;
+            const token = JSON.parse(localStorage.getItem('token'));
+            const data = {
+                week_start_date: saleForm.querySelector('#sale-start-date').value,
+                week_end_date: saleForm.querySelector('#sale-end-date').value,
+                total_amount: saleForm.querySelector('#sale-amount').value,
+                notes: saleForm.querySelector('#sale-notes').value,
+            };
+
+            try {
+                if (id) {
+                    await api.updateSale(id, data, token);
+                    alert('Sales record updated!');
+                } else {
+                    await api.createSale(data, token);
+                    alert('Sales record created!');
+                }
+                location.reload();
+            } catch (err) { alert(`Error: ${err.message}`); }
+        });
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+    // *********** DOCUMENTS MANAGEMENT *************
+    if (documentListDiv) {
+        loadData(api.getAllDocuments, render.renderDocumentsTable, documentListDiv);
+        
+        documentListDiv.addEventListener('click', async e => {
+            const row = e.target.closest('tr');
+            if (!row) return;
+            const id = row.dataset.id;
+            const token = JSON.parse(localStorage.getItem('token'));
+
+            if (e.target.classList.contains('delete-btn')) {
+                if (confirm('Are you sure you want to delete this document record?')) {
+                    try {
+                        await api.deleteDocument(id, token);
+                        location.reload();
+                    } catch (err) { alert(`Error: ${err.message}`); }
+                }
+            }
+        });
+    }
+    if (createDocumentBtn) {
+        createDocumentBtn.addEventListener('click', () => {
+            documentForm.reset();
+            documentForm.style.display = 'block';
+            cancelDocumentBtn.style.display = 'block';
+        });
+    }
+    if (cancelDocumentBtn) {
+        cancelDocumentBtn.addEventListener('click', () => {
+            documentForm.style.display = 'none';
+            cancelDocumentBtn.style.display = 'none';
+        });
+    }
+    if (documentForm) {
+        documentForm.addEventListener('submit', async e => {
+            e.preventDefault();
+            const token = JSON.parse(localStorage.getItem('token'));
+            const formData = new FormData();
+            formData.append('title', documentForm.querySelector('#document-title').value);
+            formData.append('category', documentForm.querySelector('#document-category').value);
+            formData.append('expiry_date', documentForm.querySelector('#document-expiry').value);
+            
+            const fileInput = documentForm.querySelector('#document-file');
+            if (fileInput.files[0]) {
+                formData.append('document', fileInput.files[0]);
+            } else {
+                alert('Please select a file to upload.');
+                return;
+            }
+
+            try {
+                await api.createDocument(formData, token);
+                alert('Document uploaded successfully!');
+                location.reload();
+            } catch (err) { alert(`Error: ${err.message}`); }
+        });
+    }
+
+
+
 
 
 
