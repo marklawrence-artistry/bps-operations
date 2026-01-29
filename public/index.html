@@ -3,46 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - BPS Records Management System</title>
+    <title>Login - BPS Operations System</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
-    <div class="container">
-        <div class="image-area">
-            <h1>BPS RECORDS<br>MANAGEMENT<br>SYSTEM</h1>
-            <p>Log in to access the BPS system, built for security and accountability.</p>
+<body class="login-body">
+    <div class="login-container">
+        <!-- Left Side (Blue) -->
+        <div class="login-left">
+            <div class="login-left-content">
+                <img src="logo/Bicodo Postal Services Logo.png" alt="BPS Logo" class="login-logo-white" style="filter: brightness(0) invert(1); margin-bottom: 2rem; width: 150px; display: none;"> 
+                <!-- Note: If you don't have a white version of the logo, we can hide it or use filter. 
+                     The mockup has the logo on the RIGHT side, so I will put it there. 
+                     The LEFT side has big text. -->
+                
+                <h1>BPS RECORDS<br>MANAGEMENT<br>SYSTEM</h1>
+                <p>Log in to access the BPS system, built for<br>security and accountability.</p>
+            </div>
         </div>
 
-        <div class="form-area">
-            <form id="login-form">
-                <div class="logo-container">
+        <!-- Right Side (White) -->
+        <div class="login-right">
+            <div class="login-form-wrapper">
+                <div class="brand-header">
                     <img src="logo/Bicodo Postal Services Logo.png" alt="BPS Logo">
                 </div>
-                
-                <h1>Welcome Back!</h1>
-                
-                <div class="form-item">
-                    <label for="login-email">Email Address</label>
-                    <div class="input-wrapper">
-                        <img src="Icons/Log in Page/email_icon.png" alt="">
-                        <input type="email" id="login-email" placeholder="Enter your email" >
+
+                <h2>Welcome Back!</h2>
+
+                <form id="login-form">
+                    <div class="login-input-group">
+                        <label for="login-email">Email Address</label>
+                        <div class="input-with-icon">
+                            <img src="Icons/Log in Page/email_icon.png" alt="">
+                            <input type="email" id="login-email" placeholder="Enter your email" required>
+                        </div>
                     </div>
-                </div>
 
-                <div class="form-item">
-                    <label for="login-password">Password</label>
-                    <div class="input-wrapper">
-                        <img src="Icons/Log in Page/password_icon.png" alt="">
-                        <input type="password" id="login-password" placeholder="Enter your password">
+                    <div class="login-input-group">
+                        <label for="login-password">Password</label>
+                        <div class="input-with-icon">
+                            <img src="Icons/Log in Page/password_icon.png" alt="">
+                            <input type="password" id="login-password" placeholder="Enter your password" required>
+                        </div>
                     </div>
-                </div>
 
-                <div class="forgot-password">
-                    <a href="#">Forgot password?</a>
-                </div>
+                    <div class="login-options">
+                        <a href="#">Forgot password?</a>
+                    </div>
 
-                <button type="submit">Log in</button>
-            </form>
+                    <button type="submit" class="login-btn">Log in</button>
+                </form>
+            </div>
         </div>
     </div>
 

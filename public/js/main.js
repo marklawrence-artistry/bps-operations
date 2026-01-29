@@ -914,40 +914,74 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (document.querySelector('.dashboard-table')) {
         try {
             const token = JSON.parse(localStorage.getItem('token'));
+            
+            // 1. Populate Low Stock Table
             const lowStock = await api.getLowStockItems(token);
             render.renderLowStockWidget(lowStock, document.querySelector('.dashboard-table'));
             
+            // 2. Populate Stats Cards
             const stats = await api.getDashboardStats(token);
             
-            const statValues = document.querySelectorAll('.stat-value');
-            if(statValues.length >= 3) {
-                statValues[0].innerText = stats.lowStockCount;
-                statValues[1].innerText = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(stats.salesMonthTotal);
-                statValues[2].innerText = stats.sellerCount;
-            }
+            const elLowStock = document.getElementById('stat-low-stock');
+            const elSales = document.getElementById('stat-sales');
+            const elSellers = document.getElementById('stat-sellers');
+            const elChartTotal = document.querySelector('.chart-total');
+            const elChartTotalLarge = document.querySelector('.chart-total-large');
 
-            const chartTotalEl = document.querySelector('.chart-total');
-            if(chartTotalEl) chartTotalEl.innerText = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(stats.chart.grandTotal);
+            if(elLowStock) elLowStock.innerText = stats.lowStockCount + "+";
+            
+            // Format Currency
+            const peso = new Intl.NumberFormat('en-PH', { 
+                style: 'currency', 
+                currency: 'PHP', 
+                maximumFractionDigits: 0,
+                notation: "compact", // e.g. 8.4k
+                compactDisplay: "short"
+            });
 
+            if(elSales) elSales.innerText = peso.format(stats.salesMonthTotal);
+            if(elSellers) elSellers.innerText = stats.sellerCount + "+";
+            
+            const fullPeso = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+            if(elChartTotal) elChartTotal.innerText = fullPeso.format(stats.chart.grandTotal);
+            if(elChartTotalLarge) elChartTotalLarge.innerText = peso.format(stats.chart.grandTotal);
+
+            // 3. Render Line Chart
             const ctx = document.getElementById('salesChart');
             if(ctx) {
                 new Chart(ctx, {
-                    type: 'bar',
+                    type: 'line', // Changed to Line
                     data: {
                         labels: stats.chart.labels,
                         datasets: [{
                             label: 'Monthly Sales',
                             data: stats.chart.data,
-                            backgroundColor: 'rgba(46, 59, 151, 0.8)',
-                            borderColor: 'rgba(46, 59, 151, 1)',
-                            borderWidth: 1,
-                            borderRadius: 5
+                            // Blue line style
+                            borderColor: '#3b82f6', 
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.4, // Smooth curve
+                            pointBackgroundColor: '#fff',
+                            pointBorderColor: '#3b82f6',
+                            pointRadius: 4,
+                            fill: true // Fill area under line
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        scales: { y: { beginAtZero: true } }
+                        plugins: {
+                            legend: { display: false } // Hide legend for cleaner look
+                        },
+                        scales: {
+                            y: { 
+                                beginAtZero: true,
+                                grid: { borderDash: [5, 5] }
+                            },
+                            x: {
+                                grid: { display: false }
+                            }
+                        }
                     }
                 });
             }

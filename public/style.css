@@ -548,3 +548,168 @@ button[type="submit"]:hover { opacity: 0.9; }
 .status-badge.active { background-color: #dcfce7; color: #166534; }
 .status-badge.low { background-color: #fef3c7; color: #92400e; }
 .status-badge.critical { background-color: #fee2e2; color: #991b1b; }
+
+
+/* 
+   =========================================
+   LOGIN PAGE SPECIFIC STYLES
+   =========================================
+*/
+
+/* Override body overflow for login page only if needed */
+.login-body {
+    overflow: hidden;
+    background-color: white;
+}
+
+.login-container {
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+}
+
+/* --- LEFT SIDE (Blue) --- */
+.login-left {
+    flex: 1;
+    background-color: #1e3a8a; /* Deep Blue from Mockup */
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Center horizontally */
+    padding: 4rem;
+    position: relative;
+}
+
+.login-left-content {
+    max-width: 500px;
+}
+
+.login-left h1 {
+    font-size: 3.5rem;
+    font-weight: 800;
+    color: white;
+    line-height: 1.1;
+    margin-bottom: 1.5rem;
+    letter-spacing: -1px;
+}
+
+.login-left p {
+    font-size: 1.1rem;
+    color: rgba(255, 255, 255, 0.8);
+    line-height: 1.6;
+    font-weight: 300;
+}
+
+/* --- RIGHT SIDE (White) --- */
+.login-right {
+    flex: 1;
+    background-color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.login-form-wrapper {
+    width: 100%;
+    max-width: 420px;
+}
+
+.brand-header img {
+    height: 50px;
+    margin-bottom: 2rem;
+}
+
+.login-form-wrapper h2 {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #111827;
+    margin-bottom: 2rem;
+}
+
+/* Input Fields */
+.login-input-group {
+    margin-bottom: 1.5rem;
+}
+
+.login-input-group label {
+    display: block;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: #374151;
+    margin-bottom: 0.5rem;
+}
+
+.input-with-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-with-icon img {
+    position: absolute;
+    left: 1rem;
+    width: 20px;
+    height: 20px;
+    opacity: 0.5;
+}
+
+.input-with-icon input {
+    width: 100%;
+    padding: 1rem 1rem 1rem 3rem; /* Space for icon */
+    background-color: #f3f4f6; /* Light gray background */
+    border: 1px solid #e5e7eb;
+    border-radius: 8px; /* Slightly squarer than dashboard inputs */
+    font-size: 0.95rem;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.input-with-icon input:focus {
+    background-color: white;
+    border-color: #111827; /* Dark border on focus */
+}
+
+/* Forgot Password */
+.login-options {
+    text-align: right;
+    margin-bottom: 2rem;
+}
+
+.login-options a {
+    color: #6b7280;
+    font-size: 0.9rem;
+    text-decoration: underline;
+}
+
+/* Login Button */
+.login-btn {
+    width: 100%;
+    background-color: #ff9831; /* Orange */
+    color: white;
+    padding: 1rem;
+    border-radius: 50px; /* Pill shape */
+    font-size: 1rem;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.login-btn:hover {
+    background-color: #e68a2e;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 900px) {
+    .login-container {
+        flex-direction: column;
+    }
+    
+    .login-left {
+        display: none; /* Hide blue side on mobile */
+    }
+    
+    .login-right {
+        padding: 2rem;
+    }
+}

@@ -13,118 +13,121 @@
             <div class="sidebar-header">
                 <img src="logo/Bicodo Postal Services Logo.png" alt="BPS Logo">
                 <h2>Welcome Back!</h2>
-                <p>BPS Records Management System</p>
+                <p>BPS Operations System</p>
             </div>
 
             <div class="sidebar-content">
                 <div class="nav-label">Overview</div>
                 <a class="nav-item active" href="dashboard.html">
-                    <img src="Icons/Sidebar-Navigation Bar (All Pages)/dashboard-icon.png" alt="dashboard">
+                    <img src="Icons/Sidebar-Navigation Bar (All Pages)/dashboard-icon.png" alt="Dashboard">
                     <span>Dashboard</span>
                 </a>
                 <a class="nav-item" href="audit-log.html">
-                    <img src="Icons/Sidebar-Navigation Bar (All Pages)/audit_log_icon.png" alt="audit-log">
+                    <img src="Icons/Sidebar-Navigation Bar (All Pages)/audit_log_icon.png" alt="Audit Log">
                     <span>Audit Log</span>
-                </a>
-                <a class="nav-item" href="reports.html">
-                    <img src="Icons/Sidebar-Navigation Bar (All Pages)/reports_icon.png" alt="reports">
-                    <span>Reports</span>
                 </a>
 
                 <div class="nav-label">Staff</div>
                 <a class="nav-item" href="inventory.html">
-                    <img src="Icons/Sidebar-Navigation Bar (All Pages)/inventory_icon.png" alt="inventory">
+                    <img src="Icons/Sidebar-Navigation Bar (All Pages)/inventory_icon.png" alt="Inventory">
                     <span>Inventory</span>
                 </a>
                 <a class="nav-item" href="sellers.html">
-                    <img src="Icons/Sidebar-Navigation Bar (All Pages)/sellers_icon.png" alt="sellers">
+                    <img src="Icons/Sidebar-Navigation Bar (All Pages)/sellers_icon.png" alt="Sellers">
                     <span>Sellers</span>
                 </a>
                 <a class="nav-item" href="rts.html">
-                    <img src="Icons/Sidebar-Navigation Bar (All Pages)/returned_icon.png" alt="rts">
-                    <span>Returned-to-Seller</span>
+                    <img src="Icons/Sidebar-Navigation Bar (All Pages)/returned_icon.png" alt="RTS">
+                    <span>Returns</span>
                 </a>
                 <a class="nav-item" href="documents.html">
-                    <img src="Icons/Sidebar-Navigation Bar (All Pages)/document_icon.png" alt="documents">
+                    <img src="Icons/Sidebar-Navigation Bar (All Pages)/document_icon.png" alt="Documents">
                     <span>Documents</span>
                 </a>
 
                 <div class="nav-label">Admin</div>
                 <a class="nav-item admin-nav" href="sales.html">
-                    <img src="Icons/Sidebar-Navigation Bar (All Pages)/sales_icon.png" alt="sales">
+                    <img src="Icons/Sidebar-Navigation Bar (All Pages)/sales_icon.png" alt="Sales">
                     <span>Sales</span>
                 </a>
                 <a class="nav-item admin-nav" href="accounts.html">
-                    <img src="Icons/Sidebar-Navigation Bar (All Pages)/accounts_icon.png" alt="accounts">
+                    <img src="Icons/Sidebar-Navigation Bar (All Pages)/accounts_icon.png" alt="Accounts">
                     <span>Accounts</span>
+                </a>
+                <a class="nav-item" href="reports.html">
+                    <img src="Icons/Sidebar-Navigation Bar (All Pages)/reports_icon.png" alt="Reports">
+                    <span>Reports</span>
                 </a>
             </div>
 
             <div class="sidebar-footer">
-                <a class="nav-item" href="#" id="logout-button">
+                <button id="logout-button">
                     <img src="Icons/Sidebar-Navigation Bar (All Pages)/sign-out.png" alt="Log out">
                     <span>Log out</span>
-                </a>
+                </button>
             </div>
         </div>
 
         <div class="main-content">
             <div class="main-header">
-                <div class="header-title-group">
+                <div>
                     <h1>Overview</h1>
+                    <p style="color: #6b7280; margin-top: 5px;">BPS Operations System</p>
                 </div>
                 <div class="user-info">
-                    <h4>Username</h4>
+                    <h4>Loading...</h4>
                     <p>Role</p>
                 </div>
             </div>
 
             <div class="main">
+                <!-- 1. Stats Grid -->
                 <div class="overview-grid">
                     <div class="stat-card">
                         <div class="stat-content">
-                            <h3>Total no. of <br><strong>Low Stocks</strong></h3>
-                            <div class="stat-value">120+</div>
+                            <h3>Total no. of <br><strong style="color: #111827;">Low Stocks</strong></h3>
+                            <div class="stat-value" id="stat-low-stock">0</div>
                         </div>
-                        <img src="Icons/Dashboard Page/low_stocks_icon.png" alt="">
+                        <img src="Icons/Dashboard Page/low_stocks_icon.png" alt="Low Stock">
                     </div>
                     <div class="stat-card">
                         <div class="stat-content">
-                            <h3>Total sales of <br><strong>January</strong></h3>
-                            <div class="stat-value">8,475k</div>
+                            <h3>Total sales of <br><strong style="color: #111827;">This Month</strong></h3>
+                            <div class="stat-value" id="stat-sales">0</div>
                         </div>
-                        <img src="Icons/Dashboard Page/total_sales_icon.png" alt="">
+                        <img src="Icons/Dashboard Page/total_sales_icon.png" alt="Sales">
                     </div>
                     <div class="stat-card">
                         <div class="stat-content">
-                            <h3>Total no. of <br><strong>Sellers</strong></h3>
-                            <div class="stat-value">120+</div>
+                            <h3>Total no. of <br><strong style="color: #111827;">Sellers</strong></h3>
+                            <div class="stat-value" id="stat-sellers">0</div>
                         </div>
-                        <img src="Icons/Dashboard Page/total_sellers_icon.png" alt="">
+                        <img src="Icons/Dashboard Page/total_sellers_icon.png" alt="Sellers">
                     </div>
                 </div>
 
+                <!-- 2. Chart Section -->
                 <div class="chart-section">
-                    <div class="chart-header">
-                        <div class="chart-title-group">
-                            <h2>Average Sales per Month</h2>
-                            <p>Grand Total: 475k</p>
+                    <div class="chart-header" style="display:flex; justify-content:space-between; margin-bottom: 1rem;">
+                        <div>
+                            <h2 style="font-size: 1.2rem; font-weight: 800;">Average Sales per Month</h2>
+                            <p style="font-size: 0.9rem; color: #6b7280;">Grand Total: <span class="chart-total">0</span></p>
                         </div>
-                        <div class="chart-total">400k+</div>
+                        <div class="chart-total-large" style="font-size: 1.5rem; font-weight: 800; color: #111827;"></div>
                     </div>
                     <div class="chart-container">
-                        <!-- Chart will be rendered here via JS -->
                         <canvas id="salesChart"></canvas>
                     </div>
                 </div>
 
-                <!-- Low Stock Widget -->
+                <!-- 3. Low Stock Table Widget -->
                 <div class="low-stock-section">
-                    <div class="section-header">
-                        <h2>Low Stock Items</h2>
-                        <a href="inventory.html" class="view-all">View All</a>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem;">
+                        <h2 style="font-size: 1.2rem; font-weight: 800;">Low Stock Items</h2>
+                        <a href="inventory.html" style="color: #ff9831; text-decoration: none; font-weight: 600;">View All</a>
                     </div>
-                    <div class="table-container">
+                    
+                    <div class="table-card">
                         <table class="table dashboard-table">
                             <thead>
                                 <tr>
@@ -135,24 +138,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <td>Parcel Tape</td>
-                                    <td>Packaging</td>
-                                    <td>12</td>
-                                    <td><span class="status-badge low">Low</span></td>
-                                </tr>
-                                <tr>
-                                    <td>Bubble Wrap</td>
-                                    <td>Packaging</td>
-                                    <td>5</td>
-                                    <td><span class="status-badge critical">Critical</span></td>
-                                </tr>
-                                <tr>
-                                    <td>Cardboard Boxes</td>
-                                    <td>Shipping</td>
-                                    <td>8</td>
-                                    <td><span class="status-badge low">Low</span></td>
-                                </tr>
+                                <!-- JS will populate this -->
                             </tbody>
                         </table>
                     </div>
