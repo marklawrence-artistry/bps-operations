@@ -13,9 +13,10 @@ const getAuditLogs = async (req, res) => {
             ORDER BY audit_logs.created_at DESC
             LIMIT ? OFFSET ?
         `;
+        
         const rows = await all(query, [limit, offset]);
-
         const countResult = await get(`SELECT COUNT(*) as count FROM audit_logs`);
+        
         const totalItems = countResult.count;
         const totalPages = Math.ceil(totalItems / limit);
 
@@ -30,7 +31,7 @@ const getAuditLogs = async (req, res) => {
             }
         });
     } catch (err) {
-        res.status(500).json({success: false, data: `Error: ${err.message}`});
+        res.status(500).json({ success: false, data: `Error: ${err.message}` });
     }
 };
 

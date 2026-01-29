@@ -8,6 +8,7 @@ const getDashboardStats = async (req, res) => {
         // 2. KPI: Sales This Month
         const date = new Date();
         const firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 1).toISOString().split('T')[0];
+        
         const salesThisMonth = await get(`
             SELECT SUM(total_amount) as total 
             FROM weekly_sales 
@@ -50,11 +51,11 @@ const getDashboardStats = async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err);
-        res.status(500).json({success: false, data: `Internal Server Error: ${err.message}`});
+        res.status(500).json({ success: false, data: `Internal Server Error: ${err.message}` });
     }
 };
 
+// Widget: Top 5 items low in stock (No pagination needed for dashboard widget)
 const getLowStockItems = async (req, res) => {
     try {
         const items = await all(`
@@ -72,8 +73,7 @@ const getLowStockItems = async (req, res) => {
 };
 
 const backupDatabase = (req, res) => {
-    // Keep your existing backup logic here if needed, or leave empty if not focusing on it right now
-    res.status(200).json({success: true, data: "Backup feature placeholder"});
+    res.status(200).json({ success: true, data: "Backup feature placeholder" });
 };
 
 module.exports = { getDashboardStats, getLowStockItems, backupDatabase };

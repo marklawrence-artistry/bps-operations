@@ -3,11 +3,32 @@ const { all, get, run } = require('../utils/db-async');
 
 const getAllSales = async (req, res) => {
     try {
-        // Order by latest date for the table
-        const rows = await all(`SELECT * FROM weekly_sales ORDER BY week_start_date DESC`);
-        res.status(200).json({success: true, data: rows});
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const offset = (page - 1) * limit;
+
+        const rows = await all(`
+            SELECT * FROM weekly_sales 
+            ORDER BY week_start_date DESC 
+            LIMIT ? OFFSET ?
+        `, [limit, offset]);
+
+        const countResult = await get(`SELECT COUNT(*) as count FROM weekly_sales`);
+        const totalItems = countResult.count;
+        const totalPages = Math.ceil(totalItems / limit);
+
+        res.status(200).json({
+            success: true,
+            data: rows,
+            pagination: {
+                current: page,
+                limit: limit,
+                totalItems: totalItems,
+                totalPages: totalPages
+            }
+        });
     } catch (err) {
-        res.status(500).json({success: false, data: `Internal Server Error: ${err.message}`});
+        res.status(500).json({ success: false, data: `Error: ${err.message}` });
     }
 };
 
@@ -16,7 +37,7 @@ const createSale = async (req, res) => {
         const { week_start_date, week_end_date, total_amount, notes } = req.body;
 
         if (!week_start_date || !week_end_date || !total_amount) {
-            return res.status(400).json({success: false, data: "Dates and Amount are required."});
+            return res.status(400).json({ success: false, data: "Dates and Amount are required." });
         }
 
         const result = await run(`
@@ -26,9 +47,9 @@ const createSale = async (req, res) => {
 
         await logAudit(req.user.id, 'CREATE', 'weekly_sales', result.lastID, `Added sales record for week ${week_start_date}`, req.ip);
 
-        res.status(201).json({success: true, data: "Sales record added.", id: result.lastID});
+        res.status(201).json({ success: true, data: "Sales record added.", id: result.lastID });
     } catch (err) {
-        res.status(500).json({success: false, data: `Internal Server Error: ${err.message}`});
+        res.status(500).json({ success: false, data: `Error: ${err.message}` });
     }
 };
 
@@ -36,8 +57,6 @@ const updateSale = async (req, res) => {
     try {
         const { id } = req.params;
         const { week_start_date, week_end_date, total_amount, notes } = req.body;
-
-        if (!id) return res.status(400).json({success: false, data: "ID is required."});
 
         await run(`
             UPDATE weekly_sales
@@ -51,23 +70,20 @@ const updateSale = async (req, res) => {
 
         await logAudit(req.user.id, 'UPDATE', 'weekly_sales', id, `Updated sales record ID: ${id}`, req.ip);
 
-        res.status(200).json({success: true, data: "Sales record updated."});
+        res.status(200).json({ success: true, data: "Sales record updated." });
     } catch (err) {
-        res.status(500).json({success: false, data: `Internal Server Error: ${err.message}`});
+        res.status(500).json({ success: false, data: `Error: ${err.message}` });
     }
 };
 
 const deleteSale = async (req, res) => {
     try {
         const { id } = req.params;
-        if (!id) return res.status(400).json({success: false, data: "ID is required."});
-
         await run(`DELETE FROM weekly_sales WHERE id = ?`, [id]);
         await logAudit(req.user.id, 'DELETE', 'weekly_sales', id, `Deleted sales record ID: ${id}`, req.ip);
-
-        res.status(200).json({success: true, data: "Sales record deleted."});
+        res.status(200).json({ success: true, data: "Sales record deleted." });
     } catch (err) {
-        res.status(500).json({success: false, data: `Internal Server Error: ${err.message}`});
+        res.status(500).json({ success: false, data: `Error: ${err.message}` });
     }
 };
 
