@@ -121,7 +121,6 @@
                                 <img src="Icons/Manage User Acc Page/search_icon.png" alt="">
                             </div>
                             <button class="btn-orange">Filter</button>
-                            <button class="btn-orange">Sort to Newest</button>
                         </div>
                         <button id="create-inventory-btn" class="add-account-btn">
                             <img src="Icons/Manage Inventory Page/add-icon.png" alt="">
@@ -133,36 +132,38 @@
                         <div class="table-section">
                             <div class="table-container">
                                 <div id="inventory-list">
-                                    <!-- Table will be rendered here by JS -->
+                                    <!-- Table Rendered Here -->
                                 </div>
                             </div>
+                            
+                            <!-- UPDATED: Use standard class -->
+                            <div class="pagination"></div> 
                         </div>
 
                         <div class="inventory-form-wrapper">
                             <div class="form-wrapper">
                                 <form id="inventory-form">
                                     <h3 id="form-title">Create New Inventory Item</h3>
-                                    <input type="text" id="inventory-id" title="Inventory ID">
+                                    <input type="text" id="inventory-id" hidden>
                                     <div class="form-item">
                                         <label>Name</label>
-                                        <input type="text" id="inventory-name" placeholder="Enter inventory item name..">
+                                        <input type="text" id="inventory-name" placeholder="Item name..">
                                     </div>
                                     <div class="form-item">
-                                        <label>Inventory Category</label>
-                                        <input type="text" id="inventory-category" placeholder="Enter Category ID">
+                                        <label>Category ID</label>
+                                        <input type="text" id="inventory-category" placeholder="Category ID">
                                     </div>
                                     <div class="form-item">
                                         <label>Quantity</label>
-                                        <input type="text" id="inventory-quantity" placeholder="Enter inventory quantity..">
+                                        <input type="number" id="inventory-quantity">
                                     </div>
                                     <div class="form-item">
-                                        <label>Minimum Stock Level</label>
-                                        <input type="text" id="inventory-minstock" placeholder="Enter minimum stock level..">
+                                        <label>Min Stock</label>
+                                        <input type="number" id="inventory-minstock">
                                     </div>
                                     <div class="form-item">
                                         <label>Image</label>
-                                        <input type="file" id="inventory-image" accept="image/*" title="Upload Image">
-                                        <img src="" class="inventory-image" alt="Inventory Preview"/>
+                                        <input type="file" id="inventory-image" accept="image/*">
                                     </div>
                                     <div class="form-actions">
                                         <button type="submit">Submit</button>
@@ -171,17 +172,6 @@
                                 </form>
                             </div>
                         </div>
-                    </div>
-
-                    <div class="inventory-pagination">
-                        <span>&lt;</span>
-                        <span class="active">1</span>
-                        <span>2</span>
-                        <span>3</span>
-                        <span>4</span>
-                        <span>5</span>
-                        <span>6</span>
-                        <span>&gt;</span>
                     </div>
                 </div>
             </div>

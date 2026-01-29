@@ -1,12 +1,78 @@
+// --- HELPER: Renders Pagination Controls ---
+export function renderPagination(meta, container, onPageClick) {
+    container.innerHTML = '';
+    
+    if (!meta || meta.totalPages <= 1) return;
 
+    // Prev Button
+    const prevBtn = document.createElement('button');
+    prevBtn.className = 'page-arrow prev';
+    prevBtn.innerHTML = '&lt;';
+    prevBtn.disabled = meta.current === 1;
+    prevBtn.onclick = () => onPageClick(meta.current - 1);
+    container.appendChild(prevBtn);
 
+    // Page Numbers
+    const spanContainer = document.createElement('span');
+    spanContainer.className = 'page-numbers';
+    
+    // Logic to show limited page numbers if there are too many
+    let startPage = Math.max(1, meta.current - 2);
+    let endPage = Math.min(meta.totalPages, meta.current + 2);
 
-// ACCOUNTS/AUTHENTICATION
-export function renderAccountsTable(result, container) {
+    if (startPage > 1) {
+        const span = document.createElement('span');
+        span.className = 'page-num';
+        span.innerText = '1';
+        span.onclick = () => onPageClick(1);
+        spanContainer.appendChild(span);
+        if (startPage > 2) spanContainer.appendChild(document.createTextNode('...'));
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+        const span = document.createElement('span');
+        span.className = `page-num ${i === meta.current ? 'active' : ''}`;
+        span.innerText = i;
+        span.onclick = () => onPageClick(i);
+        spanContainer.appendChild(span);
+    }
+
+    if (endPage < meta.totalPages) {
+        if (endPage < meta.totalPages - 1) spanContainer.appendChild(document.createTextNode('...'));
+        const span = document.createElement('span');
+        span.className = 'page-num';
+        span.innerText = meta.totalPages;
+        span.onclick = () => onPageClick(meta.totalPages);
+        spanContainer.appendChild(span);
+    }
+
+    container.appendChild(spanContainer);
+
+    // Next Button
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'page-arrow next';
+    nextBtn.innerHTML = '&gt;';
+    nextBtn.disabled = meta.current === meta.totalPages;
+    nextBtn.onclick = () => onPageClick(meta.current + 1);
+    container.appendChild(nextBtn);
+}
+
+// --- HELPER: Renders Empty State ---
+function renderEmptyState(tbody, colSpan, message) {
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="${colSpan}" class="no-data" style="text-align:center; padding: 2rem; color: #6b7280;">
+                ${message}
+            </td>
+        </tr>
+    `;
+}
+
+// 1. ACCOUNTS TABLE
+export function renderAccountsTable(data, container) {
     container.innerHTML = ``;
-
-    const table = document.createElement('table')
-	table.className = 'accounts table'
+    const table = document.createElement('table');
+    table.className = 'accounts table';
     table.innerHTML = `
         <thead>
             <tr>
@@ -19,71 +85,51 @@ export function renderAccountsTable(result, container) {
         </thead>
         <tbody></tbody>
     `;
-
     const tbody = table.querySelector('tbody');
-    result.forEach(element => {
-        const row = document.createElement('tr');
-        row.dataset.id = element.id;
-        row.classname = 'account-item';
 
-        let roleVal = '';
-        if(element.role_id == 1) {
-            roleVal = 'Admin';
-        } else if(element.role_id == 2) {
-            roleVal = 'Staff';
-        }
+    if (!data || data.length === 0) {
+        renderEmptyState(tbody, 5, "No accounts found.");
+    } else {
+        data.forEach(element => {
+            const row = document.createElement('tr');
+            row.dataset.id = element.id;
+            
+            const roleVal = element.role_id === 1 ? 'Admin' : 'Staff';
+            const statusBadge = element.is_active === 1 
+                ? '<span class="status-badge active">Active</span>' 
+                : '<span class="status-badge critical">Disabled</span>';
+            
+            const toggleBtn = element.is_active === 1 
+                ? `<button class='btn disable-btn'>Disable</button>` 
+                : `<button class='btn enable-btn'>Enable</button>`;
 
-        let isActiveVal = '';
-        if(element.is_active === 1) {
-            isActiveVal = '<span class="status-badge active">Active</span>';
-        } else if(element.is_active === 0) {
-            isActiveVal = '<span class="status-badge critical">Disabled</span>';
-        }
-
-        let toggleBtn = '';
-        if(element.is_active === 1) {
-            toggleBtn = `<button class='btn disable-btn'>Disable</button>`;
-        } else {
-            toggleBtn = `<button class='btn enable-btn'>Enable</button>`;
-        }
-
-        row.innerHTML = `
-            <td>${element.username}</td>
-            <td>${element.email}</td>
-            <td>${roleVal}</td>
-            <td>${isActiveVal}</td>
-            <td>
-                <div class="action-buttons">
-                    <button class='btn edit-btn'>Edit</button>
-                    <button class='btn delete-btn'>Delete</button>
-                    ${toggleBtn}
-                </div>
-            </td>
-        `;
-
-        tbody.appendChild(row);
-    });
-    if(result.length < 1) {
-        tbody.innerHTML = `
-            <td colspan="4" class="no-data" style="text-align:center;">There is no data here..</td>
-        `
+            row.innerHTML = `
+                <td><strong>${element.username}</strong></td>
+                <td>${element.email}</td>
+                <td>${roleVal}</td>
+                <td>${statusBadge}</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class='btn edit-btn'>Edit</button>
+                        <button class='btn delete-btn'>Delete</button>
+                        ${toggleBtn}
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
     }
-
-    container.appendChild(table)
+    container.appendChild(table);
 }
 
-
-
-// INVENTORY CATEGORIES
-export function renderInventoryCategoriesTable(result, container) {
+// 2. INVENTORY CATEGORIES TABLE
+export function renderInventoryCategoriesTable(data, container) {
     container.innerHTML = ``;
-
-    const table = document.createElement('table')
-	table.className = 'inventory_categories table'
+    const table = document.createElement('table');
+    table.className = 'inventory_categories table';
     table.innerHTML = `
         <thead>
             <tr>
-                <th>ID</th>
                 <th>Name</th>
                 <th>Description</th>
                 <th>Actions</th>
@@ -91,97 +137,89 @@ export function renderInventoryCategoriesTable(result, container) {
         </thead>
         <tbody></tbody>
     `;
-
     const tbody = table.querySelector('tbody');
-    result.forEach(element => {
-        const row = document.createElement('tr');
-        row.dataset.id = element.id;
-        row.classname = 'inventory-category-item';
 
-        row.innerHTML = `
-            <td>${element.id}</td>
-            <td>${element.name}</td>
-            <td>${element.description}</td>
-            <td>
-                <div class="action-buttons">
-                    <button class='btn delete-btn'>Delete</button>
-                </div>
-            </td>
-        `;
-
-        tbody.appendChild(row);
-    });
-    if(result.length < 1) {
-        tbody.innerHTML = `
-            <td colspan="4" class="no-data" style="text-align:center;">There is no data here..</td>
-        `
+    if (!data || data.length === 0) {
+        renderEmptyState(tbody, 3, "No categories found.");
+    } else {
+        data.forEach(element => {
+            const row = document.createElement('tr');
+            row.dataset.id = element.id;
+            row.innerHTML = `
+                <td><strong>${element.name}</strong></td>
+                <td>${element.description}</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class='btn delete-btn'>Delete</button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
     }
-
-    container.appendChild(table)
+    container.appendChild(table);
 }
-// INVENTORY
-export function renderInventoryTable(result, container) {
-    container.innerHTML = ``;
 
-    const table = document.createElement('table')
-	table.className = 'inventory table'
+// 3. INVENTORY TABLE
+export function renderInventoryTable(data, container) {
+    container.innerHTML = ``;
+    const table = document.createElement('table');
+    table.className = 'inventory table';
     table.innerHTML = `
         <thead>
             <tr>
-                <th>ID</th>
+                <th>Image</th>
                 <th>Name</th>
                 <th>Category</th>
-                <th>Quantity</th>
-                <th>Min. Stock Level</th>
-                <th>Image</th>
+                <th>Qty</th>
+                <th>Min. Level</th>
+                <th>Status</th>
                 <th>Actions</th>
             </tr>
         </thead>
         <tbody></tbody>
     `;
-
     const tbody = table.querySelector('tbody');
-    result.forEach(element => {
-        const row = document.createElement('tr');
-        row.dataset.id = element.id;
-        row.classname = 'inventory-item';
 
-        row.innerHTML = `
-            <td>${element.id}</td>
-            <td>${element.name}</td>
-            <td>${element.category_id}</td>
-            <td>${element.quantity}</td>
-            <td>${element.min_stock_level}</td>
-            <td>
-                <img src=${element.image_url} style="height: 100px;">
-            </td>
-            <td>
-                <div class="action-buttons">
-                    <button class='btn edit-btn'>Edit</button>
-                    <button class='btn delete-btn'>Delete</button>
-                </div>
-            </td>
-        `;
+    if (!data || data.length === 0) {
+        renderEmptyState(tbody, 7, "No inventory items found.");
+    } else {
+        data.forEach(element => {
+            const row = document.createElement('tr');
+            row.dataset.id = element.id;
+            
+            const imgDisplay = element.image_url 
+                ? `<img src="${element.image_url}" style="width:40px; height:40px; object-fit:cover; border-radius:4px;">` 
+                : `<span style="color:#ccc; font-size:0.8rem;">No Img</span>`;
 
-        tbody.appendChild(row);
-    });
-    if(result.length < 1) {
-        tbody.innerHTML = `
-            <td colspan="7" class="no-data" style="text-align:center;">There is no data here..</td>
-        `
+            const statusClass = element.quantity <= element.min_stock_level ? 'critical' : 'active';
+            const statusText = element.quantity <= element.min_stock_level ? 'Low Stock' : 'Good';
+
+            row.innerHTML = `
+                <td>${imgDisplay}</td>
+                <td><strong>${element.name}</strong></td>
+                <td>${element.category_name || 'Uncategorized'}</td>
+                <td>${element.quantity}</td>
+                <td>${element.min_stock_level}</td>
+                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                <td>
+                    <div class="action-buttons">
+                        <button class='btn edit-btn'>Edit</button>
+                        <button class='btn delete-btn'>Delete</button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
     }
-
-    container.appendChild(table)
+    container.appendChild(table);
 }
 
-
-
-// SELLERS TABLE
-export function renderSellersTable(result, container) {
+// 4. SELLERS TABLE
+export function renderSellersTable(data, container) {
     container.innerHTML = ``;
-
     const table = document.createElement('table');
-    table.className = 'seller table'; // Consistent class name
+    table.className = 'seller table';
     table.innerHTML = `
         <thead>
             <tr>
@@ -195,54 +233,46 @@ export function renderSellersTable(result, container) {
         </thead>
         <tbody></tbody>
     `;
-
     const tbody = table.querySelector('tbody');
-    result.forEach(element => {
-        const row = document.createElement('tr');
-        row.dataset.id = element.id;
-        
-        // Handle image: check if path exists or use a placeholder if needed
-        const imgDisplay = element.image_path 
-            ? `<img src="${element.image_path}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px;">` 
-            : `<span style="font-size:0.8rem; color:#ccc;">No Img</span>`;
 
-        row.innerHTML = `
-            <td>${imgDisplay}</td>
-            <td><strong>${element.name}</strong></td>
-            <td>${element.category}</td>
-            <td><span class="status-badge" style="background:#e0f2fe; color:#0369a1;">${element.platform_name}</span></td>
-            <td>
-                <div style="font-size: 0.85rem;">
-                    <div>📞 ${element.contact_num}</div>
-                    <div style="color: #6b7280;">✉️ ${element.email}</div>
-                </div>
-            </td>
-            <td>
-                <div class="action-buttons">
-                    <button class='btn edit-btn'>Edit</button>
-                    <button class='btn delete-btn'>Delete</button>
-                </div>
-            </td>
-        `;
+    if (!data || data.length === 0) {
+        renderEmptyState(tbody, 6, "No sellers found.");
+    } else {
+        data.forEach(element => {
+            const row = document.createElement('tr');
+            row.dataset.id = element.id;
+            
+            const imgDisplay = element.image_path 
+                ? `<img src="${element.image_path}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px;">` 
+                : `<span style="font-size:0.8rem; color:#ccc;">No Img</span>`;
 
-        tbody.appendChild(row);
-    });
-
-    if(result.length < 1) {
-        tbody.innerHTML = `
-            <td colspan="6" class="no-data" style="text-align:center; padding: 2rem;">No sellers found.</td>
-        `;
+            row.innerHTML = `
+                <td>${imgDisplay}</td>
+                <td><strong>${element.name}</strong></td>
+                <td>${element.category}</td>
+                <td><span class="status-badge" style="background:#e0f2fe; color:#0369a1;">${element.platform_name}</span></td>
+                <td>
+                    <div style="font-size: 0.85rem;">
+                        <div>📞 ${element.contact_num}</div>
+                        <div style="color: #6b7280;">✉️ ${element.email}</div>
+                    </div>
+                </td>
+                <td>
+                    <div class="action-buttons">
+                        <button class='btn edit-btn'>Edit</button>
+                        <button class='btn delete-btn'>Delete</button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
     }
-
     container.appendChild(table);
 }
 
-
-
-// RTS (Returned-to-Seller) TABLE
-export function renderRTSTable(result, container) {
+// 5. RTS TABLE
+export function renderRTSTable(data, container) {
     container.innerHTML = ``;
-
     const table = document.createElement('table');
     table.className = 'rts table';
     table.innerHTML = `
@@ -258,49 +288,41 @@ export function renderRTSTable(result, container) {
         </thead>
         <tbody></tbody>
     `;
-
     const tbody = table.querySelector('tbody');
-    result.forEach(element => {
-        const row = document.createElement('tr');
-        row.dataset.id = element.id;
 
-        // Styling status based on text
-        let statusColor = element.status === 'pending' ? 'low' : 'active'; // reusing your CSS classes
+    if (!data || data.length === 0) {
+        renderEmptyState(tbody, 6, "No returned items found.");
+    } else {
+        data.forEach(element => {
+            const row = document.createElement('tr');
+            row.dataset.id = element.id;
 
-        row.innerHTML = `
-            <td><strong>${element.tracking_no}</strong></td>
-            <td>${element.seller_name || 'Unknown ID: ' + element.seller_id}</td>
-            <td>
-                <div style="font-size: 0.9rem; font-weight: 600;">${element.product_name}</div>
-                <div style="font-size: 0.8rem; color: #888;">${element.description || ''}</div>
-            </td>
-            <td>${element.customer_name}</td>
-            <td><span class="status-badge ${statusColor}">${element.status}</span></td>
-            <td>
-                <div class="action-buttons">
-                    <button class='btn edit-btn'>Edit</button>
-                    <button class='btn delete-btn'>Delete</button>
-                </div>
-            </td>
-        `;
+            let statusColor = element.status === 'pending' ? 'low' : 'active';
 
-        tbody.appendChild(row);
-    });
-
-    if(result.length < 1) {
-        tbody.innerHTML = `
-            <td colspan="6" class="no-data" style="text-align:center; padding: 2rem;">No returned items found.</td>
-        `;
+            row.innerHTML = `
+                <td><strong>${element.tracking_no}</strong></td>
+                <td>${element.seller_name || 'Unknown ID: ' + element.seller_id}</td>
+                <td>
+                    <div style="font-size: 0.9rem; font-weight: 600;">${element.product_name}</div>
+                    <div style="font-size: 0.8rem; color: #888;">${element.description || ''}</div>
+                </td>
+                <td>${element.customer_name}</td>
+                <td><span class="status-badge ${statusColor}">${element.status}</span></td>
+                <td>
+                    <div class="action-buttons">
+                        <button class='btn edit-btn'>Edit</button>
+                        <button class='btn delete-btn'>Delete</button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
     }
-
     container.appendChild(table);
 }
 
-
-
-
-// SALES TABLE
-export function renderSalesTable(result, container) {
+// 6. SALES TABLE
+export function renderSalesTable(data, container) {
     container.innerHTML = ``;
     const table = document.createElement('table');
     table.className = 'sales table';
@@ -315,49 +337,42 @@ export function renderSalesTable(result, container) {
         </thead>
         <tbody></tbody>
     `;
-
     const tbody = table.querySelector('tbody');
-    result.forEach(element => {
-        const row = document.createElement('tr');
-        row.dataset.id = element.id;
 
-        // Store full data for editing
-        row.dataset.startDate = element.week_start_date;
-        row.dataset.endDate = element.week_end_date;
-        row.dataset.amount = element.total_amount;
-        row.dataset.notes = element.notes || '';
+    if (!data || data.length === 0) {
+        renderEmptyState(tbody, 4, "No sales records found.");
+    } else {
+        data.forEach(element => {
+            const row = document.createElement('tr');
+            row.dataset.id = element.id;
+            
+            // Store data for edits
+            row.dataset.startDate = element.week_start_date;
+            row.dataset.endDate = element.week_end_date;
+            row.dataset.amount = element.total_amount;
+            row.dataset.notes = element.notes || '';
 
-        const formattedAmount = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(element.total_amount);
+            const formattedAmount = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(element.total_amount);
 
-        row.innerHTML = `
-            <td>${element.week_start_date} to ${element.week_end_date}</td>
-            <td><strong>${formattedAmount}</strong></td>
-            <td>${element.notes || 'N/A'}</td>
-            <td>
-                <div class="action-buttons">
-                    <button class='btn edit-btn'>Edit</button>
-                    <button class='btn delete-btn'>Delete</button>
-                </div>
-            </td>
-        `;
-        tbody.appendChild(row);
-    });
-
-    if(result.length < 1) {
-        tbody.innerHTML = `<td colspan="4" class="no-data" style="text-align:center; padding: 2rem;">No sales records found.</td>`;
+            row.innerHTML = `
+                <td>${element.week_start_date} to ${element.week_end_date}</td>
+                <td><strong>${formattedAmount}</strong></td>
+                <td>${element.notes || 'N/A'}</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class='btn edit-btn'>Edit</button>
+                        <button class='btn delete-btn'>Delete</button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
     }
     container.appendChild(table);
 }
 
-
-
-
-
-
-
-
-// DOCUMENTS TABLE
-export function renderDocumentsTable(result, container) {
+// 7. DOCUMENTS TABLE
+export function renderDocumentsTable(data, container) {
     container.innerHTML = ``;
     const table = document.createElement('table');
     table.className = 'documents table';
@@ -373,85 +388,47 @@ export function renderDocumentsTable(result, container) {
         </thead>
         <tbody></tbody>
     `;
-
     const tbody = table.querySelector('tbody');
-    result.forEach(element => {
-        const row = document.createElement('tr');
-        row.dataset.id = element.id;
 
-        const expiryDate = new Date(element.expiry_date);
-        const today = new Date();
-        today.setHours(0,0,0,0);
+    if (!data || data.length === 0) {
+        renderEmptyState(tbody, 5, "No documents uploaded.");
+    } else {
+        data.forEach(element => {
+            const row = document.createElement('tr');
+            row.dataset.id = element.id;
 
-        let statusBadge = '<span class="status-badge active">Active</span>';
-        if (expiryDate < today) {
-            statusBadge = '<span class="status-badge critical">Expired</span>';
-        } else if ((expiryDate - today) / (1000 * 3600 * 24) <= 30) {
-            statusBadge = '<span class="status-badge low">Expires Soon</span>';
-        }
+            const expiryDate = new Date(element.expiry_date);
+            const today = new Date();
+            today.setHours(0,0,0,0);
 
-        row.innerHTML = `
-            <td><strong>${element.title}</strong></td>
-            <td>${element.category}</td>
-            <td>${element.expiry_date}</td>
-            <td>${statusBadge}</td>
-            <td>
-                <div class="action-buttons">
-                    <a href="${element.file_path}" target="_blank" class="btn" style="background:#e0f2fe; color:#0369a1; text-decoration:none;">View</a>
-                    <button class='btn real-edit-btn' style="background-color: #f3f4f6; color: #1f2937;">Edit</button>
-                    <button class='btn delete-btn'>Delete</button>
-                </div>
-            </td>
-        `;
-        tbody.appendChild(row);
-    });
+            let statusBadge = '<span class="status-badge active">Active</span>';
+            if (expiryDate < today) {
+                statusBadge = '<span class="status-badge critical">Expired</span>';
+            } else if ((expiryDate - today) / (1000 * 3600 * 24) <= 30) {
+                statusBadge = '<span class="status-badge low">Expires Soon</span>';
+            }
 
-    if(result.length < 1) {
-        tbody.innerHTML = `<td colspan="5" class="no-data" style="text-align:center; padding: 2rem;">No documents uploaded.</td>`;
+            row.innerHTML = `
+                <td><strong>${element.title}</strong></td>
+                <td>${element.category}</td>
+                <td>${element.expiry_date}</td>
+                <td>${statusBadge}</td>
+                <td>
+                    <div class="action-buttons">
+                        <a href="${element.file_path}" target="_blank" class="btn" style="background:#e0f2fe; color:#0369a1; text-decoration:none;">View</a>
+                        <button class='btn real-edit-btn' style="background-color: #f3f4f6; color: #1f2937;">Edit</button>
+                        <button class='btn delete-btn'>Delete</button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
     }
     container.appendChild(table);
 }
 
-
-
-
-
-
-
-
-// DASHBOARD - LOW STOCK WIDGET
-export function renderLowStockWidget(result, container) {
-    const tbody = container.querySelector('tbody');
-    tbody.innerHTML = ''; // Clear existing rows
-
-    if (result.length < 1) {
-        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 1rem;">All items are well-stocked!</td></tr>`;
-        return;
-    }
-
-    result.slice(0, 5).forEach(item => { // Show max 5 items
-        const row = document.createElement('tr');
-        const statusClass = item.quantity === 0 ? 'critical' : 'low';
-        const statusText = item.quantity === 0 ? 'Out of Stock' : 'Low';
-        
-        row.innerHTML = `
-            <td>${item.name}</td>
-            <td>${item.category_name || 'N/A'}</td>
-            <td>${item.quantity}</td>
-            <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-        `;
-        tbody.appendChild(row);
-    });
-}
-
-
-
-
-
-
-
-// AUDIT LOGS TABLE
-export function renderAuditLogTable(result, container) {
+// 8. AUDIT LOG TABLE
+export function renderAuditLogTable(data, container) {
     container.innerHTML = ``;
     const table = document.createElement('table');
     table.className = 'audit table';
@@ -468,79 +445,54 @@ export function renderAuditLogTable(result, container) {
         </thead>
         <tbody></tbody>
     `;
-
     const tbody = table.querySelector('tbody');
-    result.forEach(element => {
-        const row = document.createElement('tr');
-        
-        // Format Date
-        const dateObj = new Date(element.created_at);
-        const dateString = dateObj.toLocaleDateString() + ' ' + dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
 
-        // Badge Color Logic
-        let badgeClass = 'low'; // Default yellow
-        if (element.action_type === 'CREATE') badgeClass = 'active'; // Green
-        if (element.action_type === 'DELETE') badgeClass = 'critical'; // Red
-        if (element.action_type === 'LOGIN') badgeClass = ''; // Default gray-ish (custom style below if needed)
+    if (!data || data.length === 0) {
+        renderEmptyState(tbody, 6, "No activity recorded yet.");
+    } else {
+        data.forEach(element => {
+            const row = document.createElement('tr');
+            const dateObj = new Date(element.created_at);
+            const dateString = dateObj.toLocaleDateString() + ' ' + dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
 
-        // Custom style for badge if it's LOGIN (since you only have low/active/critical in CSS)
-        let badgeStyle = '';
-        if (element.action_type === 'LOGIN') badgeStyle = 'style="background-color:#e5e7eb; color:#374151;"';
-        if (element.action_type === 'UPDATE') badgeStyle = 'style="background-color:#dbeafe; color:#1e40af;"';
+            let badgeClass = 'low';
+            if (element.action_type === 'CREATE') badgeClass = 'active';
+            if (element.action_type === 'DELETE') badgeClass = 'critical';
 
-        row.innerHTML = `
-            <td style="font-size:0.85rem; color:#6b7280;">${dateString}</td>
-            <td><strong>${element.username || 'Unknown'}</strong></td>
-            <td><span class="status-badge ${badgeClass}" ${badgeStyle}>${element.action_type}</span></td>
-            <td>${element.table_name} <span style="font-size:0.8rem; color:#999;">(ID: ${element.record_id || '-'})</span></td>
-            <td>${element.description}</td>
-            <td style="font-family: monospace; font-size: 0.8rem;">${element.ip_address || '::1'}</td>
-        `;
-        tbody.appendChild(row);
-    });
-
-    if(result.length < 1) {
-        tbody.innerHTML = `<td colspan="6" class="no-data" style="text-align:center; padding: 2rem;">No activity recorded yet.</td>`;
+            row.innerHTML = `
+                <td style="font-size:0.85rem; color:#6b7280;">${dateString}</td>
+                <td><strong>${element.username || 'Unknown'}</strong></td>
+                <td><span class="status-badge ${badgeClass}">${element.action_type}</span></td>
+                <td>${element.table_name} <span style="font-size:0.8rem; color:#999;">(ID: ${element.record_id || '-'})</span></td>
+                <td>${element.description}</td>
+                <td style="font-family: monospace; font-size: 0.8rem;">${element.ip_address || '::1'}</td>
+            `;
+            tbody.appendChild(row);
+        });
     }
     container.appendChild(table);
 }
 
+// 9. DASHBOARD LOW STOCK WIDGET
+export function renderLowStockWidget(data, container) {
+    const tbody = container.querySelector('tbody');
+    tbody.innerHTML = '';
 
-
-
-
-
-export function renderPagination(meta, container, onPageClick) {
-    container.innerHTML = '';
-    
-    if(meta.totalPages <= 1) return;
-
-    // Prev Button
-    const prevBtn = document.createElement('button');
-    prevBtn.className = 'page-arrow prev';
-    prevBtn.innerHTML = '&lt;';
-    prevBtn.disabled = meta.current === 1;
-    prevBtn.onclick = () => onPageClick(meta.current - 1);
-    container.appendChild(prevBtn);
-
-    // Numbers
-    const spanContainer = document.createElement('span');
-    spanContainer.className = 'page-numbers';
-    
-    for(let i = 1; i <= meta.totalPages; i++) {
-        const span = document.createElement('span');
-        span.className = `page-num ${i === meta.current ? 'active' : ''}`;
-        span.innerText = i;
-        span.onclick = () => onPageClick(i);
-        spanContainer.appendChild(span);
+    if (!data || data.length === 0) {
+        renderEmptyState(tbody, 4, "All items are well-stocked!");
+    } else {
+        data.forEach(item => {
+            const row = document.createElement('tr');
+            const statusClass = item.quantity === 0 ? 'critical' : 'low';
+            const statusText = item.quantity === 0 ? 'Out of Stock' : 'Low';
+            
+            row.innerHTML = `
+                <td>${item.name}</td>
+                <td>${item.category_name || 'N/A'}</td>
+                <td>${item.quantity}</td>
+                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+            `;
+            tbody.appendChild(row);
+        });
     }
-    container.appendChild(spanContainer);
-
-    // Next Button
-    const nextBtn = document.createElement('button');
-    nextBtn.className = 'page-arrow next';
-    nextBtn.innerHTML = '&gt;';
-    nextBtn.disabled = meta.current === meta.totalPages;
-    nextBtn.onclick = () => onPageClick(meta.current + 1);
-    container.appendChild(nextBtn);
 }
