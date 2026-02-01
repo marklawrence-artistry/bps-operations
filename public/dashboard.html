@@ -7,8 +7,10 @@
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body>
+<body class="dashboard-body">
+    <input type="checkbox" id="nav-toggle" class="nav-toggle-checkbox" title="Toggle Navigation">
     <div class="content">
+        <label for="nav-toggle" class="sidebar-overlay"></label>
         <div class="sidebar">
             <div class="sidebar-header">
                 <img src="logo/Bicodo Postal Services Logo.png" alt="BPS Logo">
@@ -25,6 +27,10 @@
                 <a class="nav-item" href="audit-log.html">
                     <img src="Icons/Sidebar-Navigation Bar (All Pages)/audit_log_icon.png" alt="Audit Log">
                     <span>Audit Log</span>
+                </a>
+                <a class="nav-item" href="reports.html">
+                    <img src="Icons/Sidebar-Navigation Bar (All Pages)/reports_icon.png" alt="Reports">
+                    <span>Reports</span>
                 </a>
 
                 <div class="nav-label">Staff</div>
@@ -54,10 +60,7 @@
                     <img src="Icons/Sidebar-Navigation Bar (All Pages)/accounts_icon.png" alt="Accounts">
                     <span>Accounts</span>
                 </a>
-                <a class="nav-item" href="reports.html">
-                    <img src="Icons/Sidebar-Navigation Bar (All Pages)/reports_icon.png" alt="Reports">
-                    <span>Reports</span>
-                </a>
+
             </div>
 
             <div class="sidebar-footer">
@@ -70,9 +73,16 @@
 
         <div class="main-content">
             <div class="main-header">
-                <div>
-                    <h1>Overview</h1>
-                    <p style="color: #6b7280; margin-top: 5px;">BPS Operations System</p>
+                <div class="header-left">
+                    <label for="nav-toggle" class="hamburger">
+                        <span class="hamburger-line"></span>
+                        <span class="hamburger-line"></span>
+                        <span class="hamburger-line"></span>
+                    </label>
+                    <div>
+                        <h1>Overview</h1>
+                        <p class="header-subtitle">BPS Operations System</p>
+                    </div>
                 </div>
                 <div class="user-info">
                     <h4>Loading...</h4>
@@ -85,21 +95,21 @@
                 <div class="overview-grid">
                     <div class="stat-card">
                         <div class="stat-content">
-                            <h3>Total no. of <br><strong style="color: #111827;">Low Stocks</strong></h3>
+                            <h3>Total no. of <br><strong class="stat-highlight">Low Stocks</strong></h3>
                             <div class="stat-value" id="stat-low-stock">0</div>
                         </div>
                         <img src="Icons/Dashboard Page/low_stocks_icon.png" alt="Low Stock">
                     </div>
                     <div class="stat-card">
                         <div class="stat-content">
-                            <h3>Total sales of <br><strong style="color: #111827;">This Month</strong></h3>
+                            <h3>Total sales of <br><strong class="stat-highlight">This Month</strong></h3>
                             <div class="stat-value" id="stat-sales">0</div>
                         </div>
                         <img src="Icons/Dashboard Page/total_sales_icon.png" alt="Sales">
                     </div>
                     <div class="stat-card">
                         <div class="stat-content">
-                            <h3>Total no. of <br><strong style="color: #111827;">Sellers</strong></h3>
+                            <h3>Total no. of <br><strong class="stat-highlight">Total Sellers</strong></h3>
                             <div class="stat-value" id="stat-sellers">0</div>
                         </div>
                         <img src="Icons/Dashboard Page/total_sellers_icon.png" alt="Sellers">
@@ -108,12 +118,12 @@
 
                 <!-- 2. Chart Section -->
                 <div class="chart-section">
-                    <div class="chart-header" style="display:flex; justify-content:space-between; margin-bottom: 1rem;">
+                    <div class="chart-header">
                         <div>
-                            <h2 style="font-size: 1.2rem; font-weight: 800;">Average Sales per Month</h2>
-                            <p style="font-size: 0.9rem; color: #6b7280;">Grand Total: <span class="chart-total">0</span></p>
+                            <h2 class="chart-title">Average Sales per Month</h2>
+                            <p class="chart-subtitle">Grand Total: <span class="chart-total">0</span></p>
                         </div>
-                        <div class="chart-total-large" style="font-size: 1.5rem; font-weight: 800; color: #111827;"></div>
+                        <div class="chart-total-large"></div>
                     </div>
                     <div class="chart-container">
                         <canvas id="salesChart"></canvas>
@@ -122,9 +132,9 @@
 
                 <!-- 3. Low Stock Table Widget -->
                 <div class="low-stock-section">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem;">
-                        <h2 style="font-size: 1.2rem; font-weight: 800;">Low Stock Items</h2>
-                        <a href="inventory.html" style="color: #ff9831; text-decoration: none; font-weight: 600;">View All</a>
+                    <div class="section-header">
+                        <h2>Low Stock Items</h2>
+                        <a href="inventory.html" class="view-all-link">View All</a>
                     </div>
                     
                     <div class="table-card">

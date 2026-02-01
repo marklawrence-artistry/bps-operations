@@ -6,8 +6,10 @@
     <title>Manage Documents - BPS Records Management System</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="documents-page">
+    <input type="checkbox" id="nav-toggle" class="nav-toggle-checkbox" title="Toggle Navigation">
     <div class="content">
+        <label for="nav-toggle" class="sidebar-overlay"></label>
         <div class="sidebar">
             <div class="sidebar-header">
                 <img src="logo/Bicodo Postal Services Logo.png" alt="BPS Logo">
@@ -70,7 +72,14 @@
 
         <div class="main-content">
             <div class="main-header">
-                <h1>Manage Business Documents</h1>
+                <div class="header-left">
+                    <label for="nav-toggle" class="hamburger">
+                        <span class="hamburger-line"></span>
+                        <span class="hamburger-line"></span>
+                        <span class="hamburger-line"></span>
+                    </label>
+                    <h1>Manage Documents</h1>
+                </div>
                 <div class="user-info">
                     <h4>Username</h4>
                     <p>Role</p>
@@ -99,7 +108,7 @@
 
                     <!-- FORM SECTION -->
                     <div class="form-wrapper">
-                        <form id="document-form" style="display: none;">
+                        <form id="document-form" class="hidden-form">
                             <h3 id="form-title">Upload New Document</h3>
                             <input type="hidden" id="document-id">
 

@@ -6,8 +6,10 @@
     <title>Inventory - BPS Records Management System</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="inventory-page">
+    <input type="checkbox" id="nav-toggle" class="nav-toggle-checkbox" title="Toggle Navigation">
     <div class="content">
+        <label for="nav-toggle" class="sidebar-overlay"></label>
         <div class="sidebar">
             <div class="sidebar-header">
                 <img src="logo/Bicodo Postal Services Logo.png" alt="BPS Logo">
@@ -70,12 +72,19 @@
 
         <div class="main-content">
             <div class="main-header">
-                <div class="header-title-group">
-                    <h1>Manage Inventory</h1>
-                    <button id="create-inventory-category-btn">
-                        <img src="Icons/Manage Inventory Page/manage_category_icon.png" alt="">
-                        Manage Categories
-                    </button>
+                <div class="header-left">
+                    <label for="nav-toggle" class="hamburger">
+                        <span class="hamburger-line"></span>
+                        <span class="hamburger-line"></span>
+                        <span class="hamburger-line"></span>
+                    </label>
+                    <div class="header-title-group">
+                        <h1>Manage Inventory</h1>
+                        <button id="create-inventory-category-btn">
+                            <img src="Icons/Manage Inventory Page/manage_category_icon.png" alt="">
+                            Manage Categories
+                        </button>
+                    </div>
                 </div>
                 <div class="user-info">
                     <h4>Username</h4>
@@ -118,24 +127,24 @@
                                     <h3 id="form-title">Create New Inventory Item</h3>
                                     <input type="text" id="inventory-id" hidden>
                                     <div class="form-item">
-                                        <label>Name</label>
+                                        <label for="inventory-name">Name</label>
                                         <input type="text" id="inventory-name" placeholder="Item name..">
                                     </div>
                                     <div class="form-item">
-                                        <label>Category ID</label>
+                                        <label for="inventory-category">Category ID</label>
                                         <input type="text" id="inventory-category" placeholder="Category ID">
                                     </div>
                                     <div class="form-item">
-                                        <label>Quantity</label>
-                                        <input type="number" id="inventory-quantity">
+                                        <label for="inventory-quantity">Quantity</label>
+                                        <input type="number" id="inventory-quantity" placeholder="0">
                                     </div>
                                     <div class="form-item">
-                                        <label>Min Stock</label>
-                                        <input type="number" id="inventory-minstock">
+                                        <label for="inventory-minstock">Min Stock</label>
+                                        <input type="number" id="inventory-minstock" placeholder="0">
                                     </div>
                                     <div class="form-item">
-                                        <label>Image</label>
-                                        <input type="file" id="inventory-image" accept="image/*">
+                                        <label for="inventory-image">Image</label>
+                                        <input type="file" id="inventory-image" accept="image/*" title="Upload item image">
                                     </div>
                                     <div class="form-actions">
                                         <button type="submit">Submit</button>
@@ -161,7 +170,9 @@
                 <div class="modal-split">
                     <!-- Left: List -->
                     <div class="modal-list-section">
-                        <div id="inventory-category-list"></div>
+                        <div class="table-container">
+                            <div id="inventory-category-list"></div>
+                        </div>
                         <!-- Pagination for categories -->
                         <div class="category-pagination pagination"></div> 
                     </div>

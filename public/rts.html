@@ -6,8 +6,10 @@
     <title>Returned-to-Seller - BPS Records Management System</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="rts-page">
+    <input type="checkbox" id="nav-toggle" class="nav-toggle-checkbox" title="Toggle Navigation">
     <div class="content">
+        <label for="nav-toggle" class="sidebar-overlay"></label>
         <div class="sidebar">
             <div class="sidebar-header">
                 <img src="logo/Bicodo Postal Services Logo.png" alt="BPS Logo">
@@ -69,7 +71,14 @@
 
         <div class="main-content">
             <div class="main-header">
-                <h1>Return-to-Seller Logs</h1>
+                <div class="header-left">
+                    <label for="nav-toggle" class="hamburger">
+                        <span class="hamburger-line"></span>
+                        <span class="hamburger-line"></span>
+                        <span class="hamburger-line"></span>
+                    </label>
+                    <h1>Returned-to-Seller</h1>
+                </div>
                 <div class="user-info">
                     <h4>Username</h4>
                     <p>Role</p>
@@ -107,7 +116,7 @@
 
                     <!-- FORM SECTION -->
                     <div class="form-wrapper">
-                        <form id="rts-form" style="display: none;">
+                        <form id="rts-form" class="hidden-form">
                             <h3 id="form-title">Log Returned Item</h3>
 
                             <input type="text" id="rts-id" hidden>

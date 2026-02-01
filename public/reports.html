@@ -6,8 +6,10 @@
     <title>Reports - BPS RMS</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="reports-page">
+    <input type="checkbox" id="nav-toggle" class="nav-toggle-checkbox" title="Toggle Navigation">
     <div class="content">
+        <label for="nav-toggle" class="sidebar-overlay"></label>
         <!-- Sidebar (Copy standard sidebar from dashboard.html here and set Reports active) -->
         <div class="sidebar">
             <div class="sidebar-header">
@@ -62,14 +64,21 @@
 
         <div class="main-content">
             <div class="main-header">
-                <h1>Generate Reports</h1>
+                <div class="header-left">
+                    <label for="nav-toggle" class="hamburger">
+                        <span class="hamburger-line"></span>
+                        <span class="hamburger-line"></span>
+                        <span class="hamburger-line"></span>
+                    </label>
+                    <h1>Financial Reports</h1>
+                </div>
                 <div class="user-info"><h4>Admin</h4></div>
             </div>
 
             <div class="main">
                 <div class="overview-grid">
                     <!-- Inventory Report Card -->
-                    <div class="stat-card" style="display:block;">
+                    <div class="stat-card">
                         <div class="stat-content">
                             <h3>Inventory Status</h3>
                             <p>Generate a PDF list of all current stock levels, categories, and low stock warnings.</p>
@@ -79,18 +88,18 @@
                     </div>
 
                     <!-- Sales Report Card -->
-                    <div class="stat-card" style="display:block;">
+                    <div class="stat-card">
                         <div class="stat-content">
                             <h3>Sales Performance</h3>
                             <p>Generate revenue reports based on weekly sales logs.</p>
                             <br>
                             <div class="form-item">
-                                <label>Start Date</label>
-                                <input type="date" id="report-start">
+                                <label for="report-start">Start Date</label>
+                                <input type="date" id="report-start" title="Select start date for the report">
                             </div>
                             <div class="form-item">
-                                <label>End Date</label>
-                                <input type="date" id="report-end">
+                                <label for="report-end">End Date</label>
+                                <input type="date" id="report-end" title="Select end date for the report">
                             </div>
                             <button id="btn-gen-sales" class="btn-orange">Download Sales Report</button>
                         </div>

@@ -1,14 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF--8">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manage Sales - BPS Records Management System</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="sales-page">
+    <input type="checkbox" id="nav-toggle" class="nav-toggle-checkbox" title="Toggle Navigation">
     <div class="content">
+        <label for="nav-toggle" class="sidebar-overlay"></label>
         <div class="sidebar">
+
             <div class="sidebar-header">
                 <img src="logo/Bicodo Postal Services Logo.png" alt="BPS Logo">
                 <h2>Welcome Back!</h2>
@@ -69,8 +72,16 @@
         </div>
 
         <div class="main-content">
+
             <div class="main-header">
-                <h1>Manage Weekly Sales</h1>
+                <div class="header-left">
+                    <label for="nav-toggle" class="hamburger">
+                        <span class="hamburger-line"></span>
+                        <span class="hamburger-line"></span>
+                        <span class="hamburger-line"></span>
+                    </label>
+                    <h1>Sales Overview</h1>
+                </div>
                 <div class="user-info">
                     <h4>Username</h4>
                     <p>Role</p>
@@ -99,7 +110,7 @@
 
                     <!-- FORM SECTION -->
                     <div class="form-wrapper">
-                        <form id="sale-form" style="display: none;">
+                        <form id="sale-form">
                             <h3 id="form-title">Add New Sales Record</h3>
                             <input type="hidden" id="sale-id">
 

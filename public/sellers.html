@@ -6,8 +6,10 @@
     <title>Sellers - BPS Records Management System</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="sellers-page">
+    <input type="checkbox" id="nav-toggle" class="nav-toggle-checkbox" title="Toggle Navigation">
     <div class="content">
+        <label for="nav-toggle" class="sidebar-overlay"></label>
         <div class="sidebar">
             <div class="sidebar-header">
                 <img src="logo/Bicodo Postal Services Logo.png" alt="BPS Logo">
@@ -70,7 +72,14 @@
 
         <div class="main-content">
             <div class="main-header">
-                <h1>Manage Sellers</h1>
+                <div class="header-left">
+                    <label for="nav-toggle" class="hamburger">
+                        <span class="hamburger-line"></span>
+                        <span class="hamburger-line"></span>
+                        <span class="hamburger-line"></span>
+                    </label>
+                    <h1>Manage Sellers</h1>
+                </div>
                 <div class="user-info">
                     <h4>Username</h4>
                     <p>Role</p>
@@ -108,7 +117,7 @@
                     </div>
 
                     <div class="form-wrapper">
-                        <form id="seller-form" style="display: none;">
+                        <form id="seller-form" class="hidden-form">
                             <h3 id="form-title">Add New Seller</h3>
 
                             <input type="text" id="seller-id" hidden>
@@ -151,7 +160,7 @@
                             <div class="form-item">
                                 <label for="seller-image">Profile Image</label>
                                 <input type="file" id="seller-image" accept="image/*">
-                                <img src="" class="seller-image-preview" style="display:none; width: 100%; max-height: 200px; object-fit: cover; margin-top: 10px; border-radius: 8px;" alt="Preview">
+                                <img src="" class="seller-image-preview" alt="Preview">
                             </div>
 
                             <div class="form-actions">

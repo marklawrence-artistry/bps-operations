@@ -6,8 +6,10 @@
     <title>Manage Accounts - BPS Records Management System</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="accounts-page">
+    <input type="checkbox" id="nav-toggle" class="nav-toggle-checkbox" title="Toggle Navigation">
     <div class="content">
+        <label for="nav-toggle" class="sidebar-overlay"></label>
         <div class="sidebar">
             <div class="sidebar-header">
                 <img src="logo/Bicodo Postal Services Logo.png" alt="BPS Logo">
@@ -70,7 +72,14 @@
 
         <div class="main-content">
             <div class="main-header">
-                <h1>Manage User Accounts</h1>
+                <div class="header-left">
+                    <label for="nav-toggle" class="hamburger">
+                        <span class="hamburger-line"></span>
+                        <span class="hamburger-line"></span>
+                        <span class="hamburger-line"></span>
+                    </label>
+                    <h1>Manage Accounts</h1>
+                </div>
                 <div class="user-info">
                     <h4>Username</h4>
                     <p>Role</p>
