@@ -159,6 +159,37 @@ document.addEventListener('DOMContentLoaded', async () => {
         api.deleteInventory, 
         () => loadPaginatedData(api.getAllInventory, render.renderInventoryTable, document.querySelector('#inventory-list'), document.querySelector('.pagination'), 'inventoryPage', 'inventorySearch')
     );
+    setupMultiDelete(
+        '#account-list', 
+        '#bulk-delete-btn', 
+        api.deleteAccount, 
+        () => loadPaginatedData(api.getAllAccounts, render.renderAccountsTable, document.querySelector('#account-list'), document.querySelector('.pagination'), 'accountPage', 'accountSearch')
+    );
+    setupMultiDelete(
+        '#seller-list', 
+        '#bulk-delete-btn', 
+        api.deleteSeller, 
+        () => loadPaginatedData(api.getAllSellers, render.renderSellersTable, document.querySelector('#seller-list'), document.querySelector('.pagination'), 'sellerPage', 'sellerSearch')
+    );
+    setupMultiDelete(
+        '#rts-list', 
+        '#bulk-delete-btn', 
+        api.deleteRTS, 
+        () => loadPaginatedData(api.getAllRTS, render.renderRTSTable, document.querySelector('#rts-list'), document.querySelector('.pagination'), 'rtsPage', 'rtsSearch')
+    );
+    setupMultiDelete(
+        '#sales-list', 
+        '#bulk-delete-btn', 
+        api.deleteSale, 
+        () => loadPaginatedData(api.getAllSales, render.renderSalesTable, document.querySelector('#sales-list'), document.querySelector('.pagination'), 'salesPage', 'salesSearch')
+    );
+    setupMultiDelete(
+        '#document-list', 
+        '#bulk-delete-btn', 
+        api.deleteDocument, 
+        () => loadPaginatedData(api.getAllDocuments, render.renderDocumentsTable,  document.querySelector('#document-list'), document.querySelector('.pagination'), 'documentPage', 'documentSearch')
+    );
+
 
     // ============================================================
     // AUTHENTICATION (Login / Logout)
@@ -338,12 +369,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             accountForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const data = {
-                    username: accountForm.querySelector('#account-username').value.trim(),
-                    email: accountForm.querySelector('#account-email').value.trim(),
-                    role_id: accountForm.querySelector('#account-role').value,
-                    password: accountForm.querySelector('#account-password').value.trim(),
-                    security_question: accountForm.querySelector('#account-question').value,
-                    security_answer: accountForm.querySelector('#account-answer').value.trim()
+                    username: accountForm.querySelector('#account-username').value.trim() || null,
+                    email: accountForm.querySelector('#account-email').value.trim() || null,
+                    role_id: accountForm.querySelector('#account-role').value || null,
+                    password: accountForm.querySelector('#account-password').value.trim() || null,
+                    security_question: accountForm.querySelector('#account-question').value || null,
+                    security_answer: accountForm.querySelector('#account-answer').value.trim() || null
                 };
                 const id = accountForm.querySelector('#account-id').value;
                 const token = JSON.parse(localStorage.getItem('token'));
@@ -443,18 +474,26 @@ document.addEventListener('DOMContentLoaded', async () => {
                 console.log(currentAccount);
                 
                 const formData = new FormData();
-                formData.append('name', inventoryForm.querySelector('#inventory-name').value);
-                formData.append('category_id', inventoryForm.querySelector('#inventory-category').value);
-                formData.append('quantity', inventoryForm.querySelector('#inventory-quantity').value);
-                formData.append('min_stock_level', inventoryForm.querySelector('#inventory-minstock').value);
-                formData.append('staff_id', inventoryForm.querySelector('#inventory-staff-id').value);
+
+                const name = inventoryForm.querySelector('#inventory-name').value
+                if(name) formData.append('name', name);
+
+                const category_id = inventoryForm.querySelector('#inventory-category').value
+                if(category_id) formData.append('category_id', category_id);
+
+                const quantity = inventoryForm.querySelector('#inventory-quantity').value
+                if(quantity) formData.append('quantity', quantity);
+
+                const min_stock_level = inventoryForm.querySelector('#inventory-minstock').value
+                if(min_stock_level) formData.append('min_stock_level', min_stock_level);
+
+                const staff_id = inventoryForm.querySelector('#inventory-staff-id').value
+                if(staff_id)formData.append('staff_id', staff_id);
                 
                 const fileInput = inventoryForm.querySelector('#inventory-image');
                 if(fileInput.files[0]) formData.append('image', fileInput.files[0]);
 
                 const id = inventoryForm.querySelector('#inventory-id').value;
-                
-
                 const token = JSON.parse(localStorage.getItem('token'));
 
                 try {
@@ -773,7 +812,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // Load Sellers for Dropdown
                 try {
                     const token = JSON.parse(localStorage.getItem('token'));
-                    const sellerRes = await api.getAllSellers(token, 1, true); // fetchAll = true
+                    const sellerRes = await api.getSellerDropdown(token); 
                     const select = rtsForm.querySelector('#rts-seller-id');
                     select.innerHTML = '<option value="">Select Seller</option>';
                     sellerRes.data.forEach(s => {

@@ -76,6 +76,7 @@ export function renderAccountsTable(data, container) {
     table.innerHTML = `
         <thead>
             <tr>
+                <th style="width: 40px;"><input type="checkbox" class="select-all"></th>
                 <th>Username</th>
                 <th>Email</th>
                 <th>Role</th>
@@ -88,7 +89,8 @@ export function renderAccountsTable(data, container) {
     const tbody = table.querySelector('tbody');
 
     if (!data || data.length === 0) {
-        renderEmptyState(tbody, 5, "No accounts found.");
+        // Colspan increased to 6
+        renderEmptyState(tbody, 6, "No accounts found.");
     } else {
         data.forEach(element => {
             const row = document.createElement('tr');
@@ -104,6 +106,7 @@ export function renderAccountsTable(data, container) {
                 : `<button class='btn enable-btn'>Enable</button>`;
 
             row.innerHTML = `
+                <td><input type="checkbox" class="row-select" value="${element.id}"></td>
                 <td><strong>${element.username}</strong></td>
                 <td>${element.email}</td>
                 <td>${roleVal}</td>
@@ -226,6 +229,7 @@ export function renderSellersTable(data, container) {
     table.innerHTML = `
         <thead>
             <tr>
+                <th style="width: 40px;"><input type="checkbox" class="select-all"></th>
                 <th>Image</th>
                 <th>Name</th>
                 <th>Category</th>
@@ -239,7 +243,8 @@ export function renderSellersTable(data, container) {
     const tbody = table.querySelector('tbody');
 
     if (!data || data.length === 0) {
-        renderEmptyState(tbody, 6, "No sellers found.");
+        // Colspan increased to 7
+        renderEmptyState(tbody, 7, "No sellers found.");
     } else {
         data.forEach(element => {
             const row = document.createElement('tr');
@@ -250,6 +255,7 @@ export function renderSellersTable(data, container) {
                 : `<span style="font-size:0.8rem; color:#ccc;">No Img</span>`;
 
             row.innerHTML = `
+                <td><input type="checkbox" class="row-select" value="${element.id}"></td>
                 <td>${imgDisplay}</td>
                 <td><strong>${element.name}</strong></td>
                 <td>${element.category}</td>
@@ -281,6 +287,7 @@ export function renderRTSTable(data, container) {
     table.innerHTML = `
         <thead>
             <tr>
+                <th style="width: 40px;"><input type="checkbox" class="select-all"></th>
                 <th>Tracking No.</th>
                 <th>Seller</th>
                 <th>Product</th>
@@ -294,7 +301,8 @@ export function renderRTSTable(data, container) {
     const tbody = table.querySelector('tbody');
 
     if (!data || data.length === 0) {
-        renderEmptyState(tbody, 6, "No returned items found.");
+        // Colspan increased to 7
+        renderEmptyState(tbody, 7, "No returned items found.");
     } else {
         data.forEach(element => {
             const row = document.createElement('tr');
@@ -303,6 +311,7 @@ export function renderRTSTable(data, container) {
             let statusColor = element.status === 'pending' ? 'low' : 'active';
 
             row.innerHTML = `
+                <td><input type="checkbox" class="row-select" value="${element.id}"></td>
                 <td><strong>${element.tracking_no}</strong></td>
                 <td>${element.seller_name || 'Unknown ID: ' + element.seller_id}</td>
                 <td>
@@ -332,6 +341,7 @@ export function renderSalesTable(data, container) {
     table.innerHTML = `
         <thead>
             <tr>
+                <th style="width: 40px;"><input type="checkbox" class="select-all"></th>
                 <th>Week Period</th>
                 <th>Total Amount (PHP)</th>
                 <th>Notes</th>
@@ -343,7 +353,8 @@ export function renderSalesTable(data, container) {
     const tbody = table.querySelector('tbody');
 
     if (!data || data.length === 0) {
-        renderEmptyState(tbody, 4, "No sales records found.");
+        // Colspan increased to 5
+        renderEmptyState(tbody, 5, "No sales records found.");
     } else {
         data.forEach(element => {
             const row = document.createElement('tr');
@@ -358,6 +369,7 @@ export function renderSalesTable(data, container) {
             const formattedAmount = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(element.total_amount);
 
             row.innerHTML = `
+                <td><input type="checkbox" class="row-select" value="${element.id}"></td>
                 <td>${element.week_start_date} to ${element.week_end_date}</td>
                 <td><strong>${formattedAmount}</strong></td>
                 <td>${element.notes || 'N/A'}</td>
@@ -382,6 +394,7 @@ export function renderDocumentsTable(data, container) {
     table.innerHTML = `
         <thead>
             <tr>
+                <th style="width: 40px;"><input type="checkbox" class="select-all"></th>
                 <th>Document Title</th>
                 <th>Category</th>
                 <th>Expiry Date</th>
@@ -394,7 +407,8 @@ export function renderDocumentsTable(data, container) {
     const tbody = table.querySelector('tbody');
 
     if (!data || data.length === 0) {
-        renderEmptyState(tbody, 5, "No documents uploaded.");
+        // Colspan increased to 6
+        renderEmptyState(tbody, 6, "No documents uploaded.");
     } else {
         data.forEach(element => {
             const row = document.createElement('tr');
@@ -412,6 +426,7 @@ export function renderDocumentsTable(data, container) {
             }
 
             row.innerHTML = `
+                <td><input type="checkbox" class="row-select" value="${element.id}"></td>
                 <td><strong>${element.title}</strong></td>
                 <td>${element.category}</td>
                 <td>${element.expiry_date}</td>
