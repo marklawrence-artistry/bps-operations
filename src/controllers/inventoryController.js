@@ -74,31 +74,39 @@ const getAllInventory = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
+        const search = req.query.search || '';
         const offset = (page - 1) * limit;
 
-        const query = `
+        let query = `
             SELECT i.id, i.name, i.category_id, ic.name as category_name, i.quantity, i.min_stock_level, i.image_url 
             FROM inventory i
             LEFT JOIN inventory_categories ic ON i.category_id = ic.id
-            ORDER BY i.created_at DESC
-            LIMIT ? OFFSET ?
         `;
+        let countQuery = `
+            SELECT COUNT(*) as count FROM inventory i
+            LEFT JOIN inventory_categories ic ON i.category_id = ic.id
+        `;
+        let params = [];
+
+        if(search) {
+            const searchSQL = ` WHERE i.name LIKE ? OR ic.name LIKE ?`;
+            query += searchSQL;
+            countQuery += searchSQL;
+            params.push(`%${search}%`, `%${search}%`);
+        }
+
+        query += ` ORDER BY i.created_at DESC LIMIT ? OFFSET ?`;
+        const queryParams = [...params, limit, offset];
         
-        const inventory = await all(query, [limit, offset]);
-        const countResult = await get(`SELECT COUNT(*) as count FROM inventory`);
+        const inventory = await all(query, queryParams);
+        const countResult = await get(countQuery, params);
         
         const totalItems = countResult.count;
         const totalPages = Math.ceil(totalItems / limit);
 
         res.status(200).json({
-            success: true,
-            data: inventory,
-            pagination: {
-                current: page,
-                limit: limit,
-                totalItems: totalItems,
-                totalPages: totalPages
-            }
+            success: true, data: inventory,
+            pagination: { current: page, limit, totalItems, totalPages }
         });
     } catch (err) {
         res.status(500).json({ success: false, data: `Error: ${err.message}` });

@@ -5,35 +5,36 @@ let currentAccount = null;
 
 // Global State for Pagination
 const state = {
-    accountPage: 1,
-    inventoryPage: 1,
+    accountPage: 1, accountSearch: '',
+    inventoryPage: 1, inventorySearch: '',
+    sellerPage: 1, sellerSearch: '',
+    rtsPage: 1, rtsSearch: '',
     inventoryCatPage: 1,
-    sellerPage: 1,
-    rtsPage: 1,
     salesPage: 1,
     documentPage: 1,
     auditPage: 1
 };
 
 // --- HELPER: Load Paginated Data ---
-async function loadPaginatedData(apiMethod, renderMethod, listDiv, paginationDiv, pageStateKey) {
+async function loadPaginatedData(apiMethod, renderMethod, listDiv, paginationDiv, pageStateKey, searchStateKey = null) {
     if (!listDiv) return;
 
     try {
         const token = JSON.parse(localStorage.getItem('token'));
         const currentPage = state[pageStateKey];
+        // Pass search term if key exists
+        const searchTerm = searchStateKey ? state[searchStateKey] : ''; 
 
-        // API Call
-        const result = await apiMethod(token, currentPage);
+        // Call API with search
+        const result = await apiMethod(token, currentPage, searchTerm);
 
-        // Render Table
+        // Render
         renderMethod(result.data, listDiv);
 
-        // Render Pagination Controls
         if (paginationDiv && result.pagination) {
             render.renderPagination(result.pagination, paginationDiv, (newPage) => {
                 state[pageStateKey] = newPage;
-                loadPaginatedData(apiMethod, renderMethod, listDiv, paginationDiv, pageStateKey);
+                loadPaginatedData(apiMethod, renderMethod, listDiv, paginationDiv, pageStateKey, searchStateKey);
             });
         }
     } catch (err) {
@@ -43,6 +44,15 @@ async function loadPaginatedData(apiMethod, renderMethod, listDiv, paginationDiv
             location.href = 'index.html';
         }
     }
+}
+
+function debounce(func, wait) {
+    let timeout;
+    return function(...args) {
+        const context = this;
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(context, args), wait);
+    };
 }
 
 // --- HELPER: Role Based UI ---
@@ -127,6 +137,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         // Load Data
         loadPaginatedData(api.getAllAccounts, render.renderAccountsTable, accountListDiv, paginationDiv, 'accountPage');
+
+        // Search Listener
+        const searchInput = document.querySelector('.search-box input');
+        if(searchInput) {
+            searchInput.addEventListener('input', debounce((e) => {
+                state.accountSearch = e.target.value.trim();
+                state.accountPage = 1; // Reset to page 1 on search
+                loadPaginatedData(api.getAllAccounts, render.renderAccountsTable, accountListDiv, paginationDiv, 'accountPage', 'accountSearch');
+            }, 500));
+        }
 
         // Event Delegation
         accountListDiv.addEventListener('click', async (e) => {
@@ -232,6 +252,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         loadPaginatedData(api.getAllInventory, render.renderInventoryTable, inventoryListDiv, paginationDiv, 'inventoryPage');
 
+        // Search Listener
+        const searchInput = document.querySelector('.inventory-search-filter input'); // Uses the specific wrapper class
+        if(searchInput) {
+            searchInput.addEventListener('input', debounce((e) => {
+                state.inventorySearch = e.target.value.trim();
+                state.inventoryPage = 1;
+                loadPaginatedData(api.getAllInventory, render.renderInventoryTable, inventoryListDiv, paginationDiv, 'inventoryPage', 'inventorySearch');
+            }, 500));
+        }
+
+
         // Delete/Edit Logic
         inventoryListDiv.addEventListener('click', async (e) => {
             const row = e.target.closest('tr');
@@ -260,6 +291,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 document.querySelector('#cancel-inventory-btn').style.display = "block";
             }
         });
+
+        
 
         // Inventory Form
         const inventoryForm = document.querySelector('#inventory-form');
@@ -390,6 +423,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         const paginationDiv = document.querySelector('.pagination');
         loadPaginatedData(api.getAllSellers, render.renderSellersTable, sellerListDiv, paginationDiv, 'sellerPage');
 
+        const searchInput = document.querySelector('.search-box input');
+        if(searchInput) {
+            searchInput.addEventListener('input', debounce((e) => {
+                state.sellerSearch = e.target.value.trim();
+                state.sellerPage = 1;
+                loadPaginatedData(api.getAllSellers, render.renderSellersTable, sellerListDiv, paginationDiv, 'sellerPage', 'sellerSearch');
+            }, 500));
+        }
+
         // --- NEW: Event Listener for Edit/Delete ---
         sellerListDiv.addEventListener('click', async (e) => {
             const row = e.target.closest('tr');
@@ -516,6 +558,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (rtsListDiv) {
         const paginationDiv = document.querySelector('.pagination');
         loadPaginatedData(api.getAllRTS, render.renderRTSTable, rtsListDiv, paginationDiv, 'rtsPage');
+
+        const searchInput = document.querySelector('.search-box input');
+        if(searchInput) {
+            searchInput.addEventListener('input', debounce((e) => {
+                state.rtsSearch = e.target.value.trim();
+                state.rtsPage = 1;
+                loadPaginatedData(api.getAllRTS, render.renderRTSTable, rtsListDiv, paginationDiv, 'rtsPage', 'rtsSearch');
+            }, 500));
+        }
 
         // --- NEW: Event Listener for Edit/Delete ---
         rtsListDiv.addEventListener('click', async (e) => {

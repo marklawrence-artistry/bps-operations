@@ -27,9 +27,9 @@ const createSeller = async (req, res) => {
     }
 };
 
+// Update getAllSeller logic similarly:
 const getAllSeller = async (req, res) => {
     try {
-        // Support for dropdowns (fetch all names without pagination)
         if (req.query.all === 'true') {
             const rows = await all(`SELECT id, name FROM seller ORDER BY name ASC`);
             return res.status(200).json({ success: true, data: rows });
@@ -37,28 +37,31 @@ const getAllSeller = async (req, res) => {
 
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
+        const search = req.query.search || '';
         const offset = (page - 1) * limit;
 
-        const rows = await all(`
-            SELECT id, name, category, contact_num, email, image_path, platform_name, created_at 
-            FROM seller 
-            ORDER BY created_at DESC 
-            LIMIT ? OFFSET ?
-        `, [limit, offset]);
+        let query = `SELECT id, name, category, contact_num, email, image_path, platform_name, created_at FROM seller`;
+        let countQuery = `SELECT COUNT(*) as count FROM seller`;
+        let params = [];
 
-        const countResult = await get(`SELECT COUNT(*) as count FROM seller`);
+        if(search) {
+            const searchSQL = ` WHERE name LIKE ? OR email LIKE ? OR platform_name LIKE ?`;
+            query += searchSQL;
+            countQuery += searchSQL;
+            params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+        }
+
+        query += ` ORDER BY created_at DESC LIMIT ? OFFSET ?`;
+        const queryParams = [...params, limit, offset];
+
+        const rows = await all(query, queryParams);
+        const countResult = await get(countQuery, params);
         const totalItems = countResult.count;
         const totalPages = Math.ceil(totalItems / limit);
 
         res.status(200).json({
-            success: true,
-            data: rows,
-            pagination: {
-                current: page,
-                limit: limit,
-                totalItems: totalItems,
-                totalPages: totalPages
-            }
+            success: true, data: rows,
+            pagination: { current: page, limit, totalItems, totalPages }
         });
     } catch (err) {
         res.status(500).json({ success: false, data: `Error: ${err.message}` });

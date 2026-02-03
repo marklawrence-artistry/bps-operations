@@ -26,7 +26,7 @@ const login = async (req, res) => {
         }
 
         const token = jwt.sign(
-            { id: user.id, email: user.email, role_id: user.role_id },
+            { id: user.id, username: user.username, email: user.email, role_id: user.role_id }, 
             process.env.JWT_SECRET,
             { expiresIn: '8h' }
         );
@@ -57,10 +57,27 @@ const getAllUsers = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
+        const search = req.query.search || ''; // Get search term
         const offset = (page - 1) * limit;
 
-        const users = await all(`SELECT id, username, email, role_id, is_active FROM users LIMIT ? OFFSET ?`, [limit, offset]);
-        const countResult = await get(`SELECT COUNT(*) as count FROM users`);
+        // Base Query
+        let query = `SELECT id, username, email, role_id, is_active FROM users`;
+        let countQuery = `SELECT COUNT(*) as count FROM users`;
+        let params = [];
+
+        // Add Search Condition
+        if (search) {
+            const searchSQL = ` WHERE username LIKE ? OR email LIKE ?`;
+            query += searchSQL;
+            countQuery += searchSQL;
+            params.push(`%${search}%`, `%${search}%`);
+        }
+
+        query += ` LIMIT ? OFFSET ?`;
+        const queryParams = [...params, limit, offset];
+
+        const users = await all(query, queryParams);
+        const countResult = await get(countQuery, params); // Use only search params for count
         
         const totalItems = countResult.count;
         const totalPages = Math.ceil(totalItems / limit);
@@ -68,12 +85,7 @@ const getAllUsers = async (req, res) => {
         res.status(200).json({
             success: true,
             data: users,
-            pagination: {
-                current: page,
-                limit: limit,
-                totalItems: totalItems,
-                totalPages: totalPages
-            }
+            pagination: { current: page, limit, totalItems, totalPages }
         });
     } catch (err) {
         res.status(500).json({ success: false, data: `Error: ${err.message}` });

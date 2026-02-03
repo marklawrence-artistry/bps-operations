@@ -26,17 +26,15 @@ export async function createAccount(data, token) {
 }
 
 // (AUTH) Get All Accounts (Paginated)
-export async function getAllAccounts(token, page = 1) {
-    const response = await fetch(`/api/auth?page=${page}&limit=10`, {
+export async function getAllAccounts(token, page = 1, search = '') {
+    // Append search param
+    const response = await fetch(`/api/auth?page=${page}&limit=10&search=${encodeURIComponent(search)}`, {
         method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization' : `Bearer ${token}`
-        }
+        headers: { 'Content-Type': 'application/json', 'Authorization' : `Bearer ${token}` }
     });
     const result = await response.json();
     if(!result.success) throw new Error(result.data);
-    return result; // Returns { data: [...], pagination: {...} }
+    return result;
 }
 
 // (AUTH) Get Account
@@ -174,43 +172,14 @@ export async function deleteInventoryCategory(id, token) {
 }
 
 // (INVENTORY) Get All Inventory (Paginated)
-export async function getAllInventory(token, page = 1) {
-    const response = await fetch(`/api/inventory?page=${page}&limit=10`, {
+export async function getAllInventory(token, page = 1, search = '') {
+    const response = await fetch(`/api/inventory?page=${page}&limit=10&search=${encodeURIComponent(search)}`, {
         method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization' : `Bearer ${token}`
-        }
+        headers: { 'Content-Type': 'application/json', 'Authorization' : `Bearer ${token}` }
     });
     const result = await response.json();
     if(!result.success) throw new Error(result.data);
-    return result; // Returns { data: [...], pagination: {...} }
-}
-
-// (INVENTORY) Create Inventory
-export async function createInventory(formData, token) {
-    const response = await fetch('/api/inventory', {
-        method: 'POST',
-        headers: { 'Authorization' : `Bearer ${token}` },
-        body: formData
-    });
-    const result = await response.json();
-    if(!result.success) throw new Error(result.data);
-    return result.data;
-}
-
-// (INVENTORY) Delete Inventory
-export async function deleteInventory(id, token) {
-    const response = await fetch(`/api/inventory/${id}`, {
-        method: 'DELETE',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        }
-    });
-    const result = await response.json();
-    if(!result.success) throw new Error(result.data);
-    return result.data;
+    return result;
 }
 
 // (INVENTORY) Get Single Inventory
@@ -243,20 +212,17 @@ export async function updateInventory(formData, id, token) {
 
 // (SELLER) Get All Sellers
 // Supports pagination OR fetching all for dropdowns
-export async function getAllSellers(token, page = 1, fetchAll = false) {
-    let url = `/api/seller?page=${page}&limit=10`;
+export async function getAllSellers(token, page = 1, fetchAll = false, search = '') {
+    let url = `/api/seller?page=${page}&limit=10&search=${encodeURIComponent(search)}`;
     if(fetchAll) url = `/api/seller?all=true`;
 
     const response = await fetch(url, {
         method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        }
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
     });
     const result = await response.json();
     if(!result.success) throw new Error(result.data);
-    return result; // Returns full object
+    return result;
 }
 
 // (SELLER) Get One
@@ -314,17 +280,14 @@ export async function deleteSeller(id, token) {
 // -----------------------------------------------------------
 
 // (RTS) Get All (Paginated)
-export async function getAllRTS(token, page = 1) {
-    const response = await fetch(`/api/rts?page=${page}&limit=10`, {
+export async function getAllRTS(token, page = 1, search = '') {
+    const response = await fetch(`/api/rts?page=${page}&limit=10&search=${encodeURIComponent(search)}`, {
         method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        }
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
     });
     const result = await response.json();
     if(!result.success) throw new Error(result.data);
-    return result; // Returns full object
+    return result;
 }
 
 // (RTS) Create

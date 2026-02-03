@@ -222,6 +222,7 @@ body {
     padding: 1.5rem 2.5rem;
     background: white;
     border-bottom: 1px solid var(--border);
+    margin-bottom: 10px;
 }
 
 .header-left {
