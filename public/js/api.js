@@ -212,17 +212,24 @@ export async function updateInventory(formData, id, token) {
 
 // (SELLER) Get All Sellers
 // Supports pagination OR fetching all for dropdowns
-export async function getAllSellers(token, page = 1, fetchAll = false, search = '') {
-    let url = `/api/seller?page=${page}&limit=10&search=${encodeURIComponent(search)}`;
-    if(fetchAll) url = `/api/seller?all=true`;
-
-    const response = await fetch(url, {
+export async function getAllSellers(token, page = 1, search = '') {
+    const response = await fetch(`/api/seller?page=${page}&limit=10&search=${encodeURIComponent(search)}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
     });
     const result = await response.json();
     if(!result.success) throw new Error(result.data);
-    return result;
+    return result; 
+}
+
+export async function getSellerDropdown(token) {
+    const response = await fetch(`/api/seller?all=true`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
+    });
+    const result = await response.json();
+    if(!result.success) throw new Error(result.data);
+    return result; 
 }
 
 // (SELLER) Get One
@@ -381,17 +388,14 @@ export async function getLowStockItems(token) {
 // -----------------------------------------------------------
 
 // (SALES) Get All (Paginated)
-export async function getAllSales(token, page = 1) {
-    const response = await fetch(`/api/sales?page=${page}&limit=10`, {
+export async function getAllSales(token, page = 1, search = '') {
+    const response = await fetch(`/api/sales?page=${page}&limit=10&search=${encodeURIComponent(search)}`, {
         method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        }
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
     });
     const result = await response.json();
     if(!result.success) throw new Error(result.data);
-    return result; // Returns full object
+    return result; 
 }
 
 // (SALES) Create
@@ -441,17 +445,14 @@ export async function deleteSale(id, token) {
 // -----------------------------------------------------------
 
 // (DOCUMENTS) Get All (Paginated)
-export async function getAllDocuments(token, page = 1) {
-    const response = await fetch(`/api/documents?page=${page}&limit=10`, {
+export async function getAllDocuments(token, page = 1, search = '') {
+    const response = await fetch(`/api/documents?page=${page}&limit=10&search=${encodeURIComponent(search)}`, {
         method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        }
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
     });
     const result = await response.json();
     if(!result.success) throw new Error(result.data);
-    return result; // Returns full object
+    return result; 
 }
 
 // (DOCUMENTS) Create
@@ -496,14 +497,14 @@ export async function deleteDocument(id, token) {
 }
 
 // (AUDIT) Get All Logs (Paginated)
-export async function getAuditLogs(token, page = 1) {
-    const response = await fetch(`/api/audit?page=${page}&limit=10`, {
+export async function getAuditLogs(token, page = 1, search = '') {
+    const response = await fetch(`/api/audit?page=${page}&limit=10&search=${encodeURIComponent(search)}`, {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
     });
     const result = await response.json();
     if(!result.success) throw new Error(result.data);
-    return result; // Returns full object
+    return result; 
 }
 
 // (REPORTS) Download

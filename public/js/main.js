@@ -10,9 +10,9 @@ const state = {
     sellerPage: 1, sellerSearch: '',
     rtsPage: 1, rtsSearch: '',
     inventoryCatPage: 1,
-    salesPage: 1,
-    documentPage: 1,
-    auditPage: 1
+    auditPage: 1, auditSearch: '',
+    salesPage: 1, salesSearch: '',
+    documentPage: 1, documentSearch: ''
 };
 
 // --- HELPER: Load Paginated Data ---
@@ -598,7 +598,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     const item = await api.getRTS(id, token);
 
                     // 2. Fetch Sellers (Needed for the dropdown)
-                    const sellerRes = await api.getAllSellers(token, 1, true); 
+                    const sellerRes = await api.getSellerDropdown(token); 
                     const select = rtsForm.querySelector('#rts-seller-id');
                     select.innerHTML = '<option value="">Select Seller</option>';
                     sellerRes.data.forEach(s => {
@@ -707,6 +707,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (auditListDiv) {
         const paginationDiv = document.querySelector('.pagination');
         loadPaginatedData(api.getAuditLogs, render.renderAuditLogTable, auditListDiv, paginationDiv, 'auditPage');
+
+        const searchInput = document.querySelector('#audit-search'); // ID specific to audit page HTML
+        if(searchInput) {
+            searchInput.addEventListener('input', debounce((e) => {
+                state.auditSearch = e.target.value.trim();
+                state.auditPage = 1;
+                loadPaginatedData(api.getAuditLogs, render.renderAuditLogTable, auditListDiv, paginationDiv, 'auditPage', 'auditSearch');
+            }, 500));
+        }
     }
 
     // ============================================================
@@ -721,6 +730,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         
         loadPaginatedData(api.getAllSales, render.renderSalesTable, salesListDiv, paginationDiv, 'salesPage');
+
+        const searchInput = document.querySelector('.search-box input');
+        if(searchInput) {
+            searchInput.addEventListener('input', debounce((e) => {
+                state.salesSearch = e.target.value.trim();
+                state.salesPage = 1;
+                loadPaginatedData(api.getAllSales, render.renderSalesTable, salesListDiv, paginationDiv, 'salesPage', 'salesSearch');
+            }, 500));
+        }
 
         // --- NEW: Add Event Listener for Edit/Delete ---
         salesListDiv.addEventListener('click', async (e) => {
@@ -835,7 +853,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         loadPaginatedData(api.getAllDocuments, render.renderDocumentsTable, documentListDiv, paginationDiv, 'documentPage');
-        
+
+        const searchInput = document.querySelector('.search-box input');
+        if(searchInput) {
+            searchInput.addEventListener('input', debounce((e) => {
+                state.documentSearch = e.target.value.trim();
+                state.documentPage = 1;
+                loadPaginatedData(api.getAllDocuments, render.renderDocumentsTable, documentListDiv, paginationDiv, 'documentPage', 'documentSearch');
+            }, 500));
+        }
+            
         // --- NEW: Event Listener for Edit/Delete ---
         documentListDiv.addEventListener('click', async (e) => {
             const row = e.target.closest('tr');
