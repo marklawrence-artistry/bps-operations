@@ -562,10 +562,15 @@ export async function downloadReport(token, type, start = '', end = '') {
     const url = `/api/reports/download?type=${type}&startDate=${start}&endDate=${end}`;
     
     const response = await fetch(url, {
+        method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
     });
 
-    if (response.status !== 200) throw new Error("Failed to generate report");
+    if (response.status !== 200) {
+        const errorText = await response.text();
+        console.error("Download Failed:", errorText);
+        throw new Error(errorText || "Failed to generate report");
+    }
 
     const blob = await response.blob();
     const downloadUrl = window.URL.createObjectURL(blob);
@@ -575,6 +580,7 @@ export async function downloadReport(token, type, start = '', end = '') {
     document.body.appendChild(a);
     a.click();
     a.remove();
+    window.URL.revokeObjectURL(downloadUrl);
 }
 
 // (REPORTS) Get Preview Data
@@ -583,6 +589,14 @@ export async function getReportPreview(token, type, start = '', end = '') {
     const response = await fetch(url, {
         headers: { 'Authorization': `Bearer ${token}` }
     });
+
+    // Check if the request actually worked before trying to parse JSON
+    if (!response.ok) {
+        const text = await response.text();
+        console.error("Preview API Error:", text);
+        throw new Error(`Server Error (${response.status}): ${text}`);
+    }
+
     const result = await response.json();
     if(!result.success) throw new Error(result.data);
     return result.data;

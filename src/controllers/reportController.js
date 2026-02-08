@@ -1,26 +1,30 @@
 const PDFDocument = require('pdfkit-table');
 const { all } = require('../utils/db-async');
 
-// --- NEW: API to get JSON data for Frontend Chart/Table Preview ---
+// --- API to get JSON data for Frontend Chart/Table Preview ---
 const getReportPreview = async (req, res) => {
     try {
+        // Log request to server console for debugging
+        console.log(`[Report Preview] Type: ${req.query.type}, Range: ${req.query.startDate} to ${req.query.endDate}`);
+
         const { type, startDate, endDate } = req.query;
 
         if (type === 'sales') {
             let query = `SELECT id, week_start_date, week_end_date, total_amount, notes FROM weekly_sales`;
             const params = [];
 
+            // Only filter if both dates are provided and not empty strings
             if (startDate && endDate) {
                 query += ` WHERE week_start_date >= ? AND week_end_date <= ?`;
                 params.push(startDate, endDate);
             }
-            query += ` ORDER BY week_start_date ASC`; // ASC for Chart time progression
+            query += ` ORDER BY week_start_date ASC`; 
 
             const rows = await all(query, params);
             
-            // Format for Chart.js
+            // Format for Chart.js (Ensure data is numeric)
             const labels = rows.map(r => r.week_start_date);
-            const data = rows.map(r => r.total_amount);
+            const data = rows.map(r => Number(r.total_amount) || 0);
 
             return res.status(200).json({ 
                 success: true, 
@@ -28,7 +32,6 @@ const getReportPreview = async (req, res) => {
             });
 
         } else if (type === 'inventory') {
-            // Inventory snapshot (Current state, so dates don't apply as much, but we keep structure)
             const rows = await all(`
                 SELECT i.name, ic.name as category, i.quantity, i.min_stock_level 
                 FROM inventory i
@@ -38,58 +41,38 @@ const getReportPreview = async (req, res) => {
 
             return res.status(200).json({ 
                 success: true, 
-                data: { rows, chart: null } // No chart for inventory preview in this wireframe
+                data: { rows, chart: null } 
             });
         }
 
+        console.warn(`[Report Preview] Invalid type requested: ${type}`);
         res.status(400).json({ success: false, data: "Invalid report type" });
 
     } catch (err) {
+        console.error("[Report Preview] Error:", err.message);
         res.status(500).json({ success: false, data: err.message });
     }
 };
 
-// --- EXISTING: PDF Generation (Updated to match filters) ---
+// --- PDF Generation ---
 const generateReport = async (req, res) => {
     try {
         const { type, startDate, endDate } = req.query;
-        const doc = new PDFDocument({ margin: 30, size: 'A4' });
+        let rows = [];
+        let tableTitle = "";
+        let tableHeaders = [];
+        let totalRevenue = 0;
 
-        const filename = `${type}_report_${Date.now()}.pdf`;
-        res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-
-        doc.pipe(res);
-
-        // Header
-        doc.fontSize(20).font('Helvetica-Bold').text('Bicodo Postal Services', { align: 'center' });
-        doc.fontSize(12).font('Helvetica').text('Operations System Report', { align: 'center' });
-        doc.moveDown();
-
-        doc.fontSize(10).text(`Report Category: ${type.toUpperCase()}`);
-        doc.text(`Generated: ${new Date().toLocaleString()}`);
-        if(startDate && endDate) doc.text(`Range: ${startDate} to ${endDate}`);
-        doc.moveDown();
-
+        // 1. FETCH DATA
         if (type === 'inventory') {
-            const rows = await all(`
+            rows = await all(`
                 SELECT i.name, ic.name as category, i.quantity, i.min_stock_level 
                 FROM inventory i
                 LEFT JOIN inventory_categories ic ON i.category_id = ic.id
+                ORDER BY i.name ASC
             `);
-
-            const table = {
-                title: "Inventory Status",
-                headers: ["Item", "Category", "Qty", "Min", "Status"],
-                rows: rows.map(r => [
-                    r.name, 
-                    r.category || 'None', 
-                    r.quantity, 
-                    r.min_stock_level,
-                    r.quantity <= r.min_stock_level ? 'LOW' : 'OK'
-                ])
-            };
-            await doc.table(table);
+            tableTitle = "Inventory Status";
+            tableHeaders = ["Item", "Category", "Qty", "Min", "Status"];
 
         } else if (type === 'sales') {
             let query = `SELECT week_start_date, week_end_date, total_amount, notes FROM weekly_sales`;
@@ -101,28 +84,74 @@ const generateReport = async (req, res) => {
             }
             query += ` ORDER BY week_start_date DESC`;
 
-            const rows = await all(query, params);
-            const total = rows.reduce((sum, r) => sum + r.total_amount, 0);
+            rows = await all(query, params);
+            tableTitle = "Sales Records";
+            tableHeaders = ["Start", "End", "Amount (PHP)", "Notes"];
+            
+            totalRevenue = rows.reduce((sum, r) => sum + (Number(r.total_amount) || 0), 0);
+        } else {
+            return res.status(400).send("Invalid Report Type");
+        }
 
-            const table = {
-                title: "Sales Records",
-                headers: ["Start", "End", "Amount (PHP)", "Notes"],
-                rows: rows.map(r => [
-                    r.week_start_date,
-                    r.week_end_date,
-                    r.total_amount.toLocaleString('en-PH', {minimumFractionDigits: 2}),
-                    r.notes || ''
-                ])
-            };
-            await doc.table(table);
-            doc.moveDown().font('Helvetica-Bold').text(`Total Revenue: PHP ${total.toLocaleString('en-PH', {minimumFractionDigits: 2})}`);
+        // 2. CHECK EMPTY
+        if (!rows || rows.length === 0) {
+            return res.status(404).send("No records found for the selected criteria.");
+        }
+
+        // 3. GENERATE PDF
+        const doc = new PDFDocument({ margin: 30, size: 'A4' });
+        const filename = `${type}_report_${Date.now()}.pdf`;
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+        doc.pipe(res);
+
+        doc.fontSize(20).font('Helvetica-Bold').text('Bicodo Postal Services', { align: 'center' });
+        doc.fontSize(12).font('Helvetica').text('Operations System Report', { align: 'center' });
+        doc.moveDown();
+
+        doc.fontSize(10).text(`Report Category: ${type.toUpperCase()}`);
+        doc.text(`Generated: ${new Date().toLocaleString()}`);
+        if(startDate && endDate) doc.text(`Range: ${startDate} to ${endDate}`);
+        doc.moveDown();
+
+        // Prepare Table
+        let tableRows = [];
+        if (type === 'inventory') {
+            tableRows = rows.map(r => [
+                r.name || 'N/A', 
+                r.category || 'Uncategorized', 
+                String(r.quantity), 
+                String(r.min_stock_level),
+                r.quantity <= r.min_stock_level ? 'LOW' : 'OK'
+            ]);
+        } else if (type === 'sales') {
+            tableRows = rows.map(r => [
+                r.week_start_date,
+                r.week_end_date,
+                Number(r.total_amount).toLocaleString('en-PH', {minimumFractionDigits: 2}),
+                r.notes || ''
+            ]);
+        }
+
+        const table = {
+            title: tableTitle,
+            headers: tableHeaders,
+            rows: tableRows
+        };
+
+        await doc.table(table, { width: 500 });
+
+        if (type === 'sales') {
+            doc.moveDown();
+            doc.font('Helvetica-Bold').text(`Total Revenue: PHP ${totalRevenue.toLocaleString('en-PH', {minimumFractionDigits: 2})}`, { align: 'right' });
         }
 
         doc.end();
 
     } catch (err) {
-        console.error(err);
-        if (!res.headersSent) res.status(500).send("Error generating PDF");
+        console.error("PDF Error:", err);
+        if (!res.headersSent) res.status(500).send("Error generating PDF: " + err.message);
     }
 };
 

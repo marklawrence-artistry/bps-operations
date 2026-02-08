@@ -1,3 +1,6 @@
+// Global variable to track the chart instance so we can destroy it before re-rendering
+let reportChartInstance = null;
+
 // --- HELPER: Renders Pagination Controls ---
 export function renderPagination(meta, container, onPageClick) {
     container.innerHTML = '';
@@ -16,7 +19,6 @@ export function renderPagination(meta, container, onPageClick) {
     const spanContainer = document.createElement('span');
     spanContainer.className = 'page-numbers';
     
-    // Logic to show limited page numbers if there are too many
     let startPage = Math.max(1, meta.current - 2);
     let endPage = Math.min(meta.totalPages, meta.current + 2);
 
@@ -89,7 +91,6 @@ export function renderAccountsTable(data, container) {
     const tbody = table.querySelector('tbody');
 
     if (!data || data.length === 0) {
-        // Colspan increased to 6
         renderEmptyState(tbody, 6, "No accounts found.");
     } else {
         data.forEach(element => {
@@ -171,7 +172,6 @@ export function renderInventoryTable(data, container) {
     table.innerHTML = `
         <thead>
             <tr>
-                <!-- ADDED: Select All Checkbox -->
                 <th style="width: 40px;"><input type="checkbox" class="select-all"></th>
                 <th>Image</th>
                 <th>Name</th>
@@ -187,7 +187,7 @@ export function renderInventoryTable(data, container) {
     const tbody = table.querySelector('tbody');
 
     if (!data || data.length === 0) {
-        renderEmptyState(tbody, 8, "No inventory items found."); // Update colspan to 8
+        renderEmptyState(tbody, 8, "No inventory items found.");
     } else {
         data.forEach(element => {
             const row = document.createElement('tr');
@@ -243,7 +243,6 @@ export function renderSellersTable(data, container) {
     const tbody = table.querySelector('tbody');
 
     if (!data || data.length === 0) {
-        // Colspan increased to 7
         renderEmptyState(tbody, 7, "No sellers found.");
     } else {
         data.forEach(element => {
@@ -252,7 +251,7 @@ export function renderSellersTable(data, container) {
             
             const imgDisplay = element.image_path 
                 ? `<img src="${element.image_path}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px;">` 
-                : `<span style="font-size:0.8rem; color:#ccc;">No Img</span>`;
+                : `<span style="font-size:0.8rem; color:#ccc; font-size:0.8rem;">No Img</span>`;
 
             row.innerHTML = `
                 <td><input type="checkbox" class="row-select" value="${element.id}"></td>
@@ -301,7 +300,6 @@ export function renderRTSTable(data, container) {
     const tbody = table.querySelector('tbody');
 
     if (!data || data.length === 0) {
-        // Colspan increased to 7
         renderEmptyState(tbody, 7, "No returned items found.");
     } else {
         data.forEach(element => {
@@ -353,20 +351,17 @@ export function renderSalesTable(data, container) {
     const tbody = table.querySelector('tbody');
 
     if (!data || data.length === 0) {
-        // Colspan increased to 5
         renderEmptyState(tbody, 5, "No sales records found.");
     } else {
         data.forEach(element => {
             const row = document.createElement('tr');
             row.dataset.id = element.id;
-            
-            // Store data for edits
             row.dataset.startDate = element.week_start_date;
             row.dataset.endDate = element.week_end_date;
             row.dataset.amount = element.total_amount;
             row.dataset.notes = element.notes || '';
 
-            const formattedAmount = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(element.total_amount);
+            const formattedAmount = Number(element.total_amount).toLocaleString('en-PH', { style: 'currency', currency: 'PHP' });
 
             row.innerHTML = `
                 <td><input type="checkbox" class="row-select" value="${element.id}"></td>
@@ -407,7 +402,6 @@ export function renderDocumentsTable(data, container) {
     const tbody = table.querySelector('tbody');
 
     if (!data || data.length === 0) {
-        // Colspan increased to 6
         renderEmptyState(tbody, 6, "No documents uploaded.");
     } else {
         data.forEach(element => {
@@ -515,17 +509,18 @@ export function renderLowStockWidget(data, container) {
     }
 }
 
-
 // 10. REPORTS
 export function renderReportChart(type, chartData) {
     const ctx = document.getElementById('reportChart');
     const noChartMsg = document.getElementById('no-chart-msg');
 
-    // Reset Chart
+    // Safe destruction of previous chart
     if (reportChartInstance) {
         reportChartInstance.destroy();
+        reportChartInstance = null;
     }
 
+    // Hide if no data or not applicable (Inventory)
     if (!chartData || type === 'inventory') {
         ctx.style.display = 'none';
         noChartMsg.style.display = 'block';
@@ -535,14 +530,15 @@ export function renderReportChart(type, chartData) {
     ctx.style.display = 'block';
     noChartMsg.style.display = 'none';
 
+    // Create new chart and assign to global variable
     reportChartInstance = new Chart(ctx, {
-        type: 'bar', // Wireframe suggests a chart
+        type: 'bar',
         data: {
             labels: chartData.labels,
             datasets: [{
                 label: 'Total Sales (PHP)',
                 data: chartData.data,
-                backgroundColor: '#ff9831', // Orange brand color
+                backgroundColor: '#ff9831',
                 borderRadius: 4
             }]
         },
@@ -562,7 +558,7 @@ export function renderReportTable(type, rows) {
     tbody.innerHTML = '';
     thead.innerHTML = '';
 
-    if (rows.length === 0) {
+    if (!rows || rows.length === 0) {
         tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:2rem;">No data found for this range.</td></tr>`;
         return;
     }
@@ -578,10 +574,12 @@ export function renderReportTable(type, rows) {
         `;
         rows.forEach(row => {
             const tr = document.createElement('tr');
+            // Safe number formatting
+            const amount = Number(row.total_amount).toLocaleString('en-PH', {minimumFractionDigits: 2});
             tr.innerHTML = `
                 <td>${row.week_start_date}</td>
                 <td>${row.week_end_date}</td>
-                <td><strong>₱${row.total_amount.toLocaleString()}</strong></td>
+                <td><strong>₱${amount}</strong></td>
                 <td style="font-size:0.85rem; color:#666;">${row.notes || '-'}</td>
             `;
             tbody.appendChild(tr);
