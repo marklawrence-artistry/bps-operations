@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const logAudit = require('../utils/audit-logger');
 const { all, get, run } = require('../utils/db-async');
+const { getIO } = require('../utils/socket');
 
 const login = async (req, res) => {
     try {
@@ -122,7 +123,7 @@ const createUser = async (req, res) => {
         `, [username, email, hash, role_id, security_question, answerHash]);
 
         await logAudit(req.user.id, 'CREATE', 'users', result.lastID, `Created user ${username}`, req.ip);
-
+        getIO().emit('account_update');
         res.status(201).json({ success: true, data: "User created.", id: result.lastID });
     } catch (err) {
         res.status(500).json({ success: false, data: `Error: ${err.message}` });
@@ -164,7 +165,7 @@ const updateUser = async (req, res) => {
         `, [username, passwordHash, email, role_id, is_active, security_question, answerHash, id]);
 
         await logAudit(req.user.id, 'UPDATE', 'users', id, `Updated user ID:${id}`, req.ip);
-
+        getIO().emit('account_update');
         res.status(200).json({ success: true, data: "User updated." });
     } catch (err) {
         res.status(500).json({ success: false, data: `Error: ${err.message}` });
@@ -176,6 +177,7 @@ const deleteUser = async (req, res) => {
         const { id } = req.params;
         await run(`DELETE FROM users WHERE id = ?`, [id]);
         await logAudit(req.user.id, 'DELETE', 'users', id, `Deleted user ID: ${id}`, req.ip);
+        getIO().emit('account_update');
         res.status(200).json({ success: true, data: "User deleted successfully!" });
     } catch (err) {
         res.status(500).json({ success: false, data: `Error: ${err.message}` });

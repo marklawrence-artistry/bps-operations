@@ -1,5 +1,6 @@
 const logAudit = require('../utils/audit-logger');
 const { all, get, run } = require('../utils/db-async');
+const { getIO } = require('../utils/socket');
 
 // --- INVENTORY CATEGORIES ---
 
@@ -148,7 +149,7 @@ const createInventory = async (req, res) => {
         `, [name, category_id, quantity, min_stock_level, imageUrl, staff_id || req.user.id]);
 
         await logAudit(req.user.id, 'CREATE', 'inventory', result.lastID, `Created item ${name}`, req.ip);
-
+        getIO().emit('inventory_update');
         res.status(200).json({ success: true, data: "Item created.", id: result.lastID });
     } catch (err) {
         res.status(500).json({ success: false, data: `Error: ${err.message}` });
@@ -160,6 +161,8 @@ const deleteInventory = async (req, res) => {
         const { id } = req.params;
         await run(`DELETE FROM inventory WHERE id = ?`, [id]);
         await logAudit(req.user.id, 'DELETE', 'inventory', id, `Deleted item ID: ${id}`, req.ip);
+        getIO().emit('inventory_update');
+
         res.status(200).json({ success: true, data: "Item deleted." });
     } catch (err) {
         res.status(500).json({ success: false, data: `Error: ${err.message}` });
@@ -200,6 +203,8 @@ const updateInventory = async (req, res) => {
         `, [name, category_id, quantity, min_stock_level, imageUrl, staff_id, id]);
 
         await logAudit(req.user.id, 'UPDATE', 'inventory', id, `Updated item ID: ${id}`, req.ip);
+
+        getIO().emit('inventory_update');
 
         res.status(200).json({ success: true, data: "Item updated." });
     } catch (err) {

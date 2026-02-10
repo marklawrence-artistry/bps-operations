@@ -1,5 +1,6 @@
 const logAudit = require('../utils/audit-logger');
 const { all, get, run } = require('../utils/db-async');
+const { getIO } = require('../utils/socket');
 
 const getAllSales = async (req, res) => {
     try {
@@ -58,6 +59,7 @@ const createSale = async (req, res) => {
 
         await logAudit(req.user.id, 'CREATE', 'weekly_sales', result.lastID, `Added sales record for week ${week_start_date}`, req.ip);
 
+        getIO().emit('sales_update');
         res.status(201).json({ success: true, data: "Sales record added.", id: result.lastID });
     } catch (err) {
         res.status(500).json({ success: false, data: `Error: ${err.message}` });
@@ -80,7 +82,7 @@ const updateSale = async (req, res) => {
         `, [week_start_date, week_end_date, total_amount, notes, id]);
 
         await logAudit(req.user.id, 'UPDATE', 'weekly_sales', id, `Updated sales record ID: ${id}`, req.ip);
-
+        getIO().emit('sales_update');
         res.status(200).json({ success: true, data: "Sales record updated." });
     } catch (err) {
         res.status(500).json({ success: false, data: `Error: ${err.message}` });
@@ -92,6 +94,7 @@ const deleteSale = async (req, res) => {
         const { id } = req.params;
         await run(`DELETE FROM weekly_sales WHERE id = ?`, [id]);
         await logAudit(req.user.id, 'DELETE', 'weekly_sales', id, `Deleted sales record ID: ${id}`, req.ip);
+        getIO().emit('sales_update');
         res.status(200).json({ success: true, data: "Sales record deleted." });
     } catch (err) {
         res.status(500).json({ success: false, data: `Error: ${err.message}` });

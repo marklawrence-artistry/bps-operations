@@ -1,5 +1,6 @@
 const logAudit = require('../utils/audit-logger');
 const { all, get, run } = require('../utils/db-async');
+const { getIO } = require('../utils/socket');
 
 // Update getAllRTS logic:
 // Search by Tracking Number, Customer Name, or Product Name
@@ -81,7 +82,7 @@ const createRTS = async (req, res) => {
         `, [seller_id, customer_name, tracking_no, product_name, description, staff_id || req.user.id]);
 
         await logAudit(req.user.id, 'CREATE', 'rts', result.lastID, `Created RTS log for ${tracking_no}`, req.ip);
-
+        getIO().emit('rts_update');
         res.status(201).json({ success: true, data: "Item logged.", id: result.lastID });
     } catch (err) {
         res.status(500).json({ success: false, data: `Error: ${err.message}` });
@@ -107,7 +108,7 @@ const updateRTS = async (req, res) => {
         `, [seller_id, customer_name, tracking_no, product_name, description, status, staff_id, id]);
 
         await logAudit(req.user.id, 'UPDATE', 'rts', id, `Updated RTS log ID: ${id}`, req.ip);
-
+        getIO().emit('rts_update');
         res.status(200).json({ success: true, data: "RTS Record updated." });
     } catch (err) {
         res.status(500).json({ success: false, data: `Error: ${err.message}` });
@@ -119,6 +120,7 @@ const deleteRTS = async (req, res) => {
         const { id } = req.params;
         await run(`DELETE FROM rts WHERE id = ?`, [id]);
         await logAudit(req.user.id, 'DELETE', 'rts', id, `Deleted RTS log ID: ${id}`, req.ip);
+        getIO().emit('rts_update');
         res.status(200).json({ success: true, data: "RTS Record deleted." });
     } catch (err) {
         res.status(500).json({ success: false, data: `Error: ${err.message}` });

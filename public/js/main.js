@@ -149,6 +149,60 @@ function setupMultiDelete(listDivId, btnId, deleteApiCallback, refreshCallback) 
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+
+    const socket = io();
+    // 1. Inventory Listener
+    if (document.querySelector('#inventory-list')) {
+        socket.on('inventory_update', () => {
+            // Re-fetch data using current filters
+            loadPaginatedData(api.getAllInventory, render.renderInventoryTable, document.querySelector('#inventory-list'), document.querySelector('.pagination'), 'inventoryPage', 'inventorySearch', 'inventoryCategory', 'inventorySort');
+            
+            // Optional: Dashboard Widget update
+            if(document.querySelector('.dashboard-table')) {
+                 api.getLowStockItems(JSON.parse(localStorage.getItem('token')))
+                    .then(data => render.renderLowStockWidget(data, document.querySelector('.dashboard-table')));
+            }
+        });
+    }
+
+    // 2. Dashboard Listener (Stats)
+    if (document.querySelector('.overview-grid')) {
+        const updateDashboard = async () => {
+            const token = JSON.parse(localStorage.getItem('token'));
+            const stats = await api.getDashboardStats(token);
+            // ... (Copy the logic from your existing Dashboard section to update numbers here)
+            // Or simpler: just reload the page if you want to be lazy: location.reload();
+            // But updating text is cooler:
+            document.getElementById('stat-low-stock').innerText = stats.lowStockCount;
+            document.getElementById('stat-sales').innerText = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', notation: "compact" }).format(stats.salesMonthTotal);
+            document.getElementById('stat-sellers').innerText = stats.sellerCount;
+        };
+
+        socket.on('inventory_update', updateDashboard);
+        socket.on('sales_update', updateDashboard);
+        socket.on('seller_update', updateDashboard);
+    }
+
+    // 3. Sales Listener
+    if (document.querySelector('#sales-list')) {
+        socket.on('sales_update', () => {
+            loadPaginatedData(api.getAllSales, render.renderSalesTable, document.querySelector('#sales-list'), document.querySelector('.pagination'), 'salesPage', 'salesSearch', 'salesSort');
+        });
+    }
+
+    // 4. Sellers Listener
+    if (document.querySelector('#seller-list')) {
+        socket.on('seller_update', () => {
+            loadPaginatedData(api.getAllSellers, render.renderSellersTable, document.querySelector('#seller-list'), document.querySelector('.pagination'), 'sellerPage', 'sellerSearch', 'sellerCategory');
+        });
+    }
+    
+    // 5. RTS Listener
+    if (document.querySelector('#rts-list')) {
+        socket.on('rts_update', () => {
+            loadPaginatedData(api.getAllRTS, render.renderRTSTable, document.querySelector('#rts-list'), document.querySelector('.pagination'), 'rtsPage', 'rtsSearch', 'rtsStatus', 'rtsSort');
+        });
+    }
     
     // 1. SESSION CHECK (Skip on login page)
     if (!window.location.pathname.endsWith('index.html')) {

@@ -1,5 +1,6 @@
 const logAudit = require('../utils/audit-logger');
 const { all, get, run } = require('../utils/db-async');
+const { getIO } = require('../utils/socket');
 
 const getAllDocuments = async (req, res) => {
     try {
@@ -56,6 +57,7 @@ const createDocument = async (req, res) => {
         `, [title, category, expiry_date, filePath]);
 
         await logAudit(req.user.id, 'CREATE', 'documents', result.lastID, `Uploaded: ${title}`, req.ip);
+        getIO().emit('document_update');
         res.status(201).json({ success: true, data: "Uploaded.", id: result.lastID });
     } catch (err) {
         res.status(500).json({ success: false, data: `Error: ${err.message}` });
@@ -74,6 +76,7 @@ const updateDocument = async (req, res) => {
         `, [title, category, expiry_date, id]);
 
         await logAudit(req.user.id, 'UPDATE', 'documents', id, `Updated Doc ID: ${id}`, req.ip);
+        getIO().emit('document_update');
         res.status(200).json({ success: true, data: "Document updated." });
     } catch (err) {
         res.status(500).json({ success: false, data: `Error: ${err.message}` });
@@ -87,6 +90,7 @@ const deleteDocument = async (req, res) => {
         await run(`DELETE FROM notification_logs WHERE document_id = ?`, [id]);
         
         await logAudit(req.user.id, 'DELETE', 'documents', id, `Deleted Doc ID: ${id}`, req.ip);
+        getIO().emit('document_update');
         res.status(200).json({ success: true, data: "Deleted." });
     } catch (err) {
         res.status(500).json({ success: false, data: `Error: ${err.message}` });

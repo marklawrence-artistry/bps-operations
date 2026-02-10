@@ -1,4 +1,7 @@
 require('dotenv').config();
+const http = require('http');
+const socketUtil = require('./utils/socket'); 
+
 const express = require('express');
 const cors = require('cors');
 const { db, initDB } = require('./database');
@@ -26,6 +29,16 @@ const systemRoutes = require('./routes/systemRoutes');
 
 const app = express();
 const PORT = process.env.port || 3000;
+
+// 2. CREATE HTTP SERVER
+const server = http.createServer(app);
+
+// 3. INITIALIZE SOCKET
+const io = socketUtil.init(server);
+
+io.on('connection', (socket) => {
+    console.log('Client connected: ' + socket.id);
+});
 
 // Middlewares
 app.use(express.json());
@@ -59,6 +72,6 @@ cron.schedule('0 8 * * *', () => {
 console.log("Scheduled document checker to run daily at 8:00 AM.");
 
 // Initial Routes
-app.listen(PORT, () => {
-    console.log(`The port is listening at http://localhost:${PORT}`);
-})
+server.listen(PORT, '0.0.0.0', () => { // '0.0.0.0' allows access from phone
+    console.log(`Server running at http://localhost:${PORT}`);
+});

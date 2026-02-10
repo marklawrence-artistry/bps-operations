@@ -1,5 +1,6 @@
 const logAudit = require('../utils/audit-logger');
 const { all, get, run } = require('../utils/db-async');
+const { getIO } = require('../utils/socket');
 
 const createSeller = async (req, res) => {
     try {
@@ -20,7 +21,7 @@ const createSeller = async (req, res) => {
 
         const result = await run(query, params);
         await logAudit(req.user.id, 'CREATE', 'seller', result.lastID, `Created seller profile ${name}`, req.ip);
-
+        getIO().emit('seller_update');
         res.status(201).json({ success: true, data: "Seller created.", id: result.lastID });
     } catch (err) {
         res.status(500).json({ success: false, data: `Error: ${err.message}` });
@@ -114,7 +115,7 @@ const updateSeller = async (req, res) => {
         `, [name, category, contact_num, email, imageUrl, platform_name, staff_id, id]);
 
         await logAudit(req.user.id, 'UPDATE', 'seller', id, `Updated seller profile ID: ${id}`, req.ip);
-
+        getIO().emit('seller_update');
         res.status(200).json({ success: true, data: "Seller profile updated." });
     } catch (err) {
         res.status(500).json({ success: false, data: `Error: ${err.message}` });
@@ -126,6 +127,7 @@ const deleteSeller = async (req, res) => {
         const { id } = req.params;
         await run(`DELETE FROM seller WHERE id = ?`, [id]);
         await logAudit(req.user.id, 'DELETE', 'seller', id, `Deleted seller ID: ${id}`, req.ip);
+        getIO().emit('seller_update');
         res.status(200).json({ success: true, data: "Seller deleted." });
     } catch (err) {
         res.status(500).json({ success: false, data: `Error: ${err.message}` });
