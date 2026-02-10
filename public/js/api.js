@@ -145,6 +145,20 @@ export async function resetPassword(data) {
     return result.data;
 }
 
+export async function changePassword(data, token) {
+    const response = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(data)
+    });
+    const result = await response.json();
+    if(!result.success) throw new Error(result.data);
+    return result.data;
+}
+
 // -----------------------------------------------------------
 
 // (INVENTORY) Get All Inventory Categories

@@ -18,4 +18,6 @@ router.delete('/:id', verifyToken, isAdmin, authController.deleteUser);
 router.post('/forgot-password', authController.getSecurityQuestion);
 router.post('/reset-password', authController.resetPassword);
 
+router.post('/change-password', verifyToken, authController.changePassword);
+
 module.exports = router;

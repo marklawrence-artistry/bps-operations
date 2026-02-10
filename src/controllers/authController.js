@@ -261,7 +261,40 @@ const resetPassword = async (req, res) => {
     }
 };
 
+// NEW: Change Password (Logged In User)
+const changePassword = async (req, res) => {
+    try {
+        const { oldPassword, newPassword } = req.body;
+        const userId = req.user.id;
+
+        if (!oldPassword || !newPassword) {
+            return res.status(400).json({ success: false, data: "Both old and new passwords are required." });
+        }
+
+        // Get current user password hash
+        const user = await get(`SELECT password_hash FROM users WHERE id = ?`, [userId]);
+        
+        // Verify Old Password
+        const isMatch = await bcrypt.compare(oldPassword, user.password_hash);
+        if (!isMatch) return res.status(401).json({ success: false, data: "Incorrect old password." });
+
+        // Hash New Password
+        const salt = await bcrypt.genSalt(10);
+        const hash = await bcrypt.hash(newPassword, salt);
+
+        // Update DB
+        await run(`UPDATE users SET password_hash = ? WHERE id = ?`, [hash, userId]);
+        
+        // Log Audit
+        await logAudit(userId, 'UPDATE', 'users', userId, 'Changed own password', req.ip);
+
+        res.status(200).json({ success: true, data: "Password changed successfully." });
+    } catch (err) {
+        res.status(500).json({ success: false, data: err.message });
+    }
+};
+
 module.exports = { 
     login, getAllUsers, createUser, updateUser, deleteUser, getUser, disableUser, enableUser, checkSession, 
-    getSecurityQuestion, resetPassword 
+    getSecurityQuestion, resetPassword, changePassword
 }

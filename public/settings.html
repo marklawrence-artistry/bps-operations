@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - BPS RMS</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="settings-page">
+    <input type="checkbox" id="nav-toggle" class="nav-toggle-checkbox">
+    <div class="content">
+        <label for="nav-toggle" class="sidebar-overlay"></label>
+        
+        <!-- SIDEBAR -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <img src="logo/Bicodo Postal Services Logo.png" alt="BPS Logo">
+                <h2>Welcome Back!</h2>
+                <p>BPS Operations System</p>
+            </div>
+            <div class="sidebar-content">
+                <div class="nav-label">Overview</div>
+                <a class="nav-item" href="dashboard.html"><img src="Icons/Sidebar-Navigation Bar (All Pages)/dashboard-icon.png"><span>Dashboard</span></a>
+                <a class="nav-item" href="audit-log.html"><img src="Icons/Sidebar-Navigation Bar (All Pages)/audit_log_icon.png"><span>Audit Log</span></a>
+                <a class="nav-item" href="reports.html"><img src="Icons/Sidebar-Navigation Bar (All Pages)/reports_icon.png"><span>Reports</span></a>
+                <!-- Link to Settings -->
+
+                <div class="nav-label">Staff</div>
+                <a class="nav-item" href="inventory.html"><img src="Icons/Sidebar-Navigation Bar (All Pages)/inventory_icon.png"><span>Inventory</span></a>
+                <a class="nav-item" href="sellers.html"><img src="Icons/Sidebar-Navigation Bar (All Pages)/sellers_icon.png"><span>Sellers</span></a>
+                <a class="nav-item" href="rts.html"><img src="Icons/Sidebar-Navigation Bar (All Pages)/returned_icon.png"><span>Returned</span></a>
+                <a class="nav-item" href="documents.html"><img src="Icons/Sidebar-Navigation Bar (All Pages)/document_icon.png"><span>Documents</span></a>
+
+                <div class="nav-label">Admin</div>
+                <a class="nav-item admin-nav" href="sales.html"><img src="Icons/Sidebar-Navigation Bar (All Pages)/sales_icon.png"><span>Sales</span></a>
+                <a class="nav-item admin-nav" href="accounts.html"><img src="Icons/Sidebar-Navigation Bar (All Pages)/accounts_icon.png"><span>Accounts</span></a>
+                <a class="nav-item active" href="settings.html">
+                    <!-- You can use a gear icon here, reusing dashboard icon for now -->
+                    <img src="Icons/settings.png" style="filter: hue-rotate(90deg);">
+                    <span>Settings</span>
+                </a>
+            </div>
+            <div class="sidebar-footer">
+                <button id="logout-button"><img src="Icons/Sidebar-Navigation Bar (All Pages)/sign-out.png"><span>Log out</span></button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="main-header">
+                <div class="header-left">
+                    <label for="nav-toggle" class="hamburger"><span class="hamburger-line"></span><span class="hamburger-line"></span><span class="hamburger-line"></span></label>
+                    <h1>System Settings</h1>
+                </div>
+                <div class="user-info"><h4>Username</h4><p>Role</p></div>
+            </div>
+
+            <div class="main" style="padding-top: 2rem;">
+                
+                <div class="main-content-layout" style="display: flex; gap: 2rem; flex-wrap: wrap;">
+                    
+                    <!-- 1. CHANGE PASSWORD CARD -->
+                    <div class="table-section" style="flex: 1; min-width: 300px;">
+                        <div class="table-card" style="padding: 2rem;">
+                            <h2 style="margin-bottom: 1.5rem;">Security</h2>
+                            <form id="change-pass-form">
+                                <div class="form-item">
+                                    <label>Current Password</label>
+                                    <input type="password" id="old-pass" required placeholder="Enter current password">
+                                </div>
+                                <div class="form-item">
+                                    <label>New Password</label>
+                                    <input type="password" id="new-pass" required minlength="8" placeholder="Min 8 characters">
+                                </div>
+                                <div class="form-item">
+                                    <label>Confirm New Password</label>
+                                    <input type="password" id="confirm-new-pass" required placeholder="Re-enter new password">
+                                </div>
+                                <button type="submit" class="btn-orange">Change Password</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- 2. BACKUP & RESTORE CARD (Admin Only) -->
+                    <div class="form-wrapper admin-nav" style="flex: 1; min-width: 300px;">
+                        <div class="table-card" style="padding: 2rem; background-color: #f9fafb;">
+                            <h2 style="margin-bottom: 1.5rem;">System Maintenance</h2>
+                            
+                            <!-- Backup -->
+                            <div style="background: white; padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; border: 1px solid #e5e7eb;">
+                                <h3 style="margin-bottom: 0.5rem; font-size: 1rem;">Backup Data</h3>
+                                <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 1rem;">
+                                    Download a ZIP file containing the database and uploaded images.
+                                </p>
+                                <button id="btn-download-backup" class="btn-orange" style="width: 100%;">
+                                    Download Backup
+                                </button>
+                            </div>
+
+                            <!-- Restore -->
+                            <div style="background: #fff7ed; padding: 1.5rem; border-radius: 12px; border: 1px solid #ffedd5;">
+                                <h3 style="margin-bottom: 0.5rem; color: #9a3412; font-size: 1rem;">Restore Data</h3>
+                                <p style="color: #9a3412; font-size: 0.9rem; margin-bottom: 1rem;">
+                                    <strong>Warning:</strong> Overwrites current data. System will restart.
+                                </p>
+                                <form id="restore-form">
+                                    <input type="file" id="backup-file" accept=".zip" required style="width: 100%; margin-bottom: 1rem;">
+                                    <button type="submit" class="btn-orange" style="width: 100%; background-color: #ef4444;">
+                                        Upload & Restore
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="js/main.js" type="module"></script>
+</body>
+</html>

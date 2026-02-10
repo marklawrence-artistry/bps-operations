@@ -480,6 +480,19 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const inventoryForm = document.querySelector('#inventory-form');
                 const item = await api.getInventory(id, token);
                 
+                // --- NEW: POPULATE DROPDOWN BEFORE SETTING VALUE ---
+                try {
+                    const catRes = await api.getAllInventoryCategories(token, 1, true);
+                    const select = inventoryForm.querySelector('#inventory-category');
+                    select.innerHTML = '<option value="" disabled selected>Select Category...</option>';
+                    catRes.data.forEach(c => {
+                        const opt = document.createElement('option');
+                        opt.value = c.id;
+                        opt.innerText = c.name;
+                        select.appendChild(opt);
+                    });
+                } catch(e) { console.error(e); }
+                
                 inventoryForm.querySelector('#inventory-id').value = item.id;
                 inventoryForm.querySelector('#inventory-name').value = item.name;
                 inventoryForm.querySelector('#inventory-category').value = item.category_id;
@@ -500,9 +513,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         const cancelInventoryBtn = document.querySelector('#cancel-inventory-btn');
 
         if(createInventoryBtn) {
-            createInventoryBtn.addEventListener('click', () => {
+            createInventoryBtn.addEventListener('click', async () => { // Make async
                 inventoryForm.reset();
                 inventoryForm.querySelector('#inventory-id').value = "";
+                
+                // --- NEW: POPULATE DROPDOWN ---
+                try {
+                    const token = JSON.parse(localStorage.getItem('token'));
+                    const catRes = await api.getAllInventoryCategories(token, 1, true); // fetchAll
+                    const select = inventoryForm.querySelector('#inventory-category');
+                    select.innerHTML = '<option value="" disabled selected>Select Category...</option>';
+                    catRes.data.forEach(c => {
+                        const opt = document.createElement('option');
+                        opt.value = c.id;
+                        opt.innerText = c.name;
+                        select.appendChild(opt);
+                    });
+                } catch(e) { console.error(e); }
+                // -----------------------------
+
                 inventoryForm.style.display = "block";
                 cancelInventoryBtn.style.display = "block";
             });
@@ -1092,6 +1121,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         if(saleForm) {
             saleForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
+                const start = saleForm.querySelector('#sale-start-date').value;
+                const end = saleForm.querySelector('#sale-end-date').value;
+
+                // --- NEW: DATE VALIDATION ---
+                if (new Date(start) > new Date(end)) {
+                    alert("Error: Start Date cannot be after End Date.");
+                    return; // Stop execution
+                }
+                // -----------------------------
+
                 const id = saleForm.querySelector('#sale-id').value;
                 const data = {
                     week_start_date: saleForm.querySelector('#sale-start-date').value,
@@ -1577,5 +1616,85 @@ document.addEventListener('DOMContentLoaded', async () => {
                 btn.disabled = false;
             }
         });
+    }
+
+
+    // ============================================================
+    // PAGE: SETTINGS
+    // ============================================================
+    const settingsBody = document.querySelector('.settings-page');
+    if (settingsBody) {
+        // 1. Change Password
+        const passForm = document.getElementById('change-pass-form');
+        if (passForm) {
+            passForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const oldPass = document.getElementById('old-pass').value;
+                const newPass = document.getElementById('new-pass').value;
+                const confirmPass = document.getElementById('confirm-new-pass').value;
+
+                if (newPass !== confirmPass) {
+                    alert("New passwords do not match.");
+                    return;
+                }
+
+                try {
+                    const token = JSON.parse(localStorage.getItem('token'));
+                    await api.changePassword({ oldPassword: oldPass, newPassword: newPass }, token);
+                    alert("Password changed successfully.");
+                    passForm.reset();
+                } catch (err) {
+                    alert(err.message);
+                }
+            });
+        }
+
+        // 2. Backup & Restore (Copied logic, reused here)
+        // ... (The backup/restore logic provided in previous answer can be reused here targeting IDs in settings.html) ...
+        const btnDownload = document.getElementById('btn-download-backup');
+        if (btnDownload) {
+            btnDownload.addEventListener('click', async () => {
+                const token = JSON.parse(localStorage.getItem('token'));
+                try {
+                    const res = await fetch('/api/system/backup', { headers: { 'Authorization': `Bearer ${token}` } });
+                    if (res.status === 200) {
+                        const blob = await res.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `bps_backup_${new Date().toISOString().slice(0,10)}.zip`;
+                        document.body.appendChild(a);
+                        a.click();
+                        a.remove();
+                    } else { alert("Backup failed"); }
+                } catch (err) { alert("Error downloading backup"); }
+            });
+        }
+
+        const restoreForm = document.getElementById('restore-form');
+        if (restoreForm) {
+            restoreForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                if (!confirm("CRITICAL WARNING: This will overwrite data. Continue?")) return;
+                
+                const token = JSON.parse(localStorage.getItem('token'));
+                const fileInput = document.getElementById('backup-file');
+                const formData = new FormData();
+                formData.append('backup_file', fileInput.files[0]);
+
+                try {
+                    const res = await fetch('/api/system/restore', {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}` },
+                        body: formData
+                    });
+                    const result = await res.json();
+                    if(result.success) {
+                        alert("Restored! Reloading...");
+                        location.reload();
+                    } else { alert(result.data); }
+                } catch(err) { alert("Restore failed"); }
+            });
+        }
     }
 });
