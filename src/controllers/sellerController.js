@@ -125,6 +125,21 @@ const updateSeller = async (req, res) => {
 const deleteSeller = async (req, res) => {
     try {
         const { id } = req.params;
+
+        const seller = await get(`SELECT image_path FROM seller WHERE id = ?`, [id]);
+
+        if (seller && seller.image_path) {
+            const filename = seller.image_path.split('/').pop();
+            const uploadDir = process.env.RAILWAY_VOLUME_MOUNT_PATH 
+                ? path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH, 'uploads')
+                : path.join(__dirname, '../../public/uploads');
+            const filePath = path.join(uploadDir, filename);
+
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+            }
+        }
+
         await run(`DELETE FROM seller WHERE id = ?`, [id]);
         await logAudit(req.user.id, 'DELETE', 'seller', id, `Deleted seller ID: ${id}`, req.ip);
         getIO().emit('seller_update');

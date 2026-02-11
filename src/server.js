@@ -42,7 +42,13 @@ io.on('connection', (socket) => {
 
 // Middlewares
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../public')));
+if (process.env.RAILWAY_VOLUME_MOUNT_PATH) {
+    console.log(`Serving uploads from Volume: ${process.env.RAILWAY_VOLUME_MOUNT_PATH}/uploads`);
+    app.use('/uploads', express.static(path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH, 'uploads')));
+} else {
+    // Local development fallback
+    app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
+}
 app.use(cors());
 
 // Initialize Database

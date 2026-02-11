@@ -209,6 +209,34 @@ document.addEventListener('DOMContentLoaded', async () => {
         await checkSession();
     }
 
+    function initAutoLogout() {
+        // 30 minutes in milliseconds
+        const TIMEOUT_MS = 30 * 60 * 1000; 
+        let logoutTimer;
+
+        const resetTimer = () => {
+            clearTimeout(logoutTimer);
+            logoutTimer = setTimeout(() => {
+                alert("Session expired due to inactivity.");
+                localStorage.removeItem('token');
+                location.href = 'index.html';
+            }, TIMEOUT_MS);
+        };
+
+        // Events that count as "activity"
+        window.onload = resetTimer;
+        document.onmousemove = resetTimer;
+        document.onkeypress = resetTimer;
+        document.ontouchstart = resetTimer; // For mobile
+        document.onclick = resetTimer;
+        document.onscroll = resetTimer;
+    }
+
+    // Call this if the user is logged in
+    if (localStorage.getItem('token')) {
+        initAutoLogout();
+    }
+
     setupMultiDelete(
         '#inventory-list', 
         '#bulk-delete-btn', 

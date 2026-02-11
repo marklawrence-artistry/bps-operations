@@ -159,6 +159,26 @@ const createInventory = async (req, res) => {
 const deleteInventory = async (req, res) => {
     try {
         const { id } = req.params;
+        
+        // 1. Get the image URL before deleting
+        const item = await get(`SELECT image_url FROM inventory WHERE id = ?`, [id]);
+        
+        if (item && item.image_url) {
+            // Extract filename from URL (assuming format http://host/uploads/filename.jpg)
+            const filename = item.image_url.split('/').pop();
+            // Define path based on environment (Volume or Local)
+            const uploadDir = process.env.RAILWAY_VOLUME_MOUNT_PATH 
+                ? path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH, 'uploads')
+                : path.join(__dirname, '../../public/uploads');
+                
+            const filePath = path.join(uploadDir, filename);
+
+            // Delete file if exists
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+            }
+        }
+
         await run(`DELETE FROM inventory WHERE id = ?`, [id]);
         await logAudit(req.user.id, 'DELETE', 'inventory', id, `Deleted item ID: ${id}`, req.ip);
         getIO().emit('inventory_update');

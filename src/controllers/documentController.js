@@ -86,6 +86,21 @@ const updateDocument = async (req, res) => {
 const deleteDocument = async (req, res) => {
     try {
         const { id } = req.params;
+        
+        const doc = await get(`SELECT file_path FROM documents WHERE id = ?`, [id]);
+
+        if (doc && doc.file_path) {
+            const filename = doc.file_path.split('/').pop();
+            const uploadDir = process.env.RAILWAY_VOLUME_MOUNT_PATH 
+                ? path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH, 'uploads')
+                : path.join(__dirname, '../../public/uploads');
+            const filePath = path.join(uploadDir, filename);
+
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+            }
+        }
+
         await run(`DELETE FROM documents WHERE id = ?`, [id]);
         await run(`DELETE FROM notification_logs WHERE document_id = ?`, [id]);
         
