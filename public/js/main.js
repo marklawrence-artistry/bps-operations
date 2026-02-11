@@ -237,6 +237,61 @@ document.addEventListener('DOMContentLoaded', async () => {
         initAutoLogout();
     }
 
+    const testEmailBtn = document.getElementById('test-email-btn');
+    if (testEmailBtn) {
+        testEmailBtn.addEventListener('click', async () => {
+            if(!confirm("Send a test email summary of all documents to the Admin?")) return;
+
+            // 1. Get Token
+            let token = localStorage.getItem('token');
+            console.log("Raw Token from Storage:", token); // Check console to see what this prints
+
+            if (!token) {
+                alert("You are not logged in (Token missing).");
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // 2. Clean Token (Remove potential extra quotes that cause 401 errors)
+            token = token.replace(/^"|"$/g, '');
+
+            const originalText = testEmailBtn.innerHTML;
+            testEmailBtn.innerText = "Sending...";
+            testEmailBtn.disabled = true;
+
+            try {
+                // 3. Send Request
+                const response = await fetch('/api/notifications/test-run', {
+                    method: 'GET',
+                    headers: { 
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                // 4. Handle Response
+                if (response.status === 401) {
+                    alert("Session expired. Please log out and log in again.");
+                    return;
+                }
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert(`Success! Email sent. Check your inbox.`);
+                } else {
+                    alert(`Error: ${result.data || 'Failed to send'}`);
+                }
+            } catch (error) {
+                console.error(error);
+                alert("System error. Check console.");
+            } finally {
+                testEmailBtn.innerHTML = originalText;
+                testEmailBtn.disabled = false;
+            }
+        });
+    }
+
     setupMultiDelete(
         '#inventory-list', 
         '#bulk-delete-btn', 
