@@ -1,37 +1,30 @@
-const { db } = require('../database');
+// IMPORT getDB instead of db
+const { getDB } = require('../database');
 
 const all = (query, params = []) => {
     return new Promise((resolve, reject) => {
-        db.all(query, params, (err, rows) => {
-            if(err) {
-                reject(err);
-            } else {
-                resolve(rows);
-            }
+        // ALWAYS CALL getDB() inside the function to get the current active connection
+        getDB().all(query, params, (err, rows) => {
+            if(err) reject(err);
+            else resolve(rows);
         })
     })
 }
 
 const get = (query, params = []) => {
     return new Promise((resolve, reject) => {
-        db.get(query, params, (err, row) => {
-            if(err) {
-                reject(err);
-            } else {
-                resolve(row);
-            }
+        getDB().get(query, params, (err, row) => {
+            if(err) reject(err);
+            else resolve(row);
         })
     })
 }
 
 const run = (query, params = []) => {
     return new Promise((resolve, reject) => {
-        db.run(query, params, function(err) {
-            if(err) {
-                reject(err);
-            } else {
-                resolve(this);
-            }
+        getDB().run(query, params, function(err) {
+            if(err) reject(err);
+            else resolve(this);
         })
     })
 }

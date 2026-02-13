@@ -2,7 +2,8 @@ const fs = require('fs');
 const path = require('path');
 const archiver = require('archiver');
 const AdmZip = require('adm-zip');
-const { db } = require('../database');
+// Import reloadDB and getDB
+const { getDB, reloadDB } = require('../database'); 
 const { get, run } = require('../utils/db-async');
 
 const DB_NAME = "bps.db";
@@ -12,14 +13,11 @@ const DB_PATH = process.env.RAILWAY_VOLUME_MOUNT_PATH
 
 const UPLOADS_PATH = path.join(__dirname, '../../public/uploads');
 
-// --- SETTINGS LOGIC ---
 const getSettings = async (req, res) => {
     try {
         const setting = await get(`SELECT value FROM settings WHERE key = 'admin_email'`);
         res.json({ success: true, data: { admin_email: setting ? setting.value : '' } });
-    } catch (err) {
-        res.status(500).json({ success: false, data: err.message });
-    }
+    } catch (err) { res.status(500).json({ success: false, data: err.message }); }
 };
 
 const updateSettings = async (req, res) => {
@@ -27,9 +25,7 @@ const updateSettings = async (req, res) => {
         const { admin_email } = req.body;
         await run(`UPDATE settings SET value = ? WHERE key = 'admin_email'`, [admin_email]);
         res.json({ success: true, data: "Settings updated." });
-    } catch (err) {
-        res.status(500).json({ success: false, data: err.message });
-    }
+    } catch (err) { res.status(500).json({ success: false, data: err.message }); }
 };
 
 // --- BACKUP ---
@@ -43,6 +39,7 @@ const createBackup = async (req, res) => {
         archive.on('error', (err) => res.status(500).send({error: err.message}));
         archive.pipe(res);
 
+        // NOTE: We do not close the DB here. Sqlite allows reading while open.
         if (fs.existsSync(DB_PATH)) archive.file(DB_PATH, { name: DB_NAME });
         if (fs.existsSync(UPLOADS_PATH)) archive.directory(UPLOADS_PATH, 'uploads');
 
@@ -52,7 +49,7 @@ const createBackup = async (req, res) => {
     }
 };
 
-// --- RESTORE (CRITICAL FIX) ---
+// --- RESTORE (HOT RELOAD VERSION) ---
 const restoreBackup = async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ success: false, data: "No file." });
@@ -74,26 +71,41 @@ const restoreBackup = async (req, res) => {
         // 2. Restore DB
         const dbEntry = zipEntries.find(e => e.entryName === DB_NAME);
         if (dbEntry) {
-            // We do NOT close the DB gracefully here because it causes locking issues.
-            // We blindly overwrite the file (SQLite allows this if we restart immediately).
-            fs.writeFileSync(DB_PATH, dbEntry.getData());
-            console.log("DB File Overwritten.");
+            console.log("Closing DB for Restore...");
             
-            // Delete temp zip
-            fs.unlinkSync(zipPath);
+            // A. Close the existing connection to release file locks
+            const currentDb = getDB();
+            currentDb.close(async (err) => {
+                if (err) {
+                    console.error("Error closing DB:", err);
+                    return res.status(500).json({ success: false, data: "DB Busy." });
+                }
 
-            // Send response FIRST
-            res.status(200).json({ success: true, data: "Restore success! System restarting..." });
+                try {
+                    // B. Overwrite the file
+                    fs.writeFileSync(DB_PATH, dbEntry.getData());
+                    console.log("DB File Overwritten.");
 
-            // CRITICAL: Kill the process. Railway/Nodemon will auto-restart it.
-            // This ensures the new DB connection loads the new file.
-            setTimeout(() => {
-                console.log("RESTARTING PROCESS...");
-                process.exit(0); 
-            }, 1000);
+                    // C. Re-open the connection (Hot Reload)
+                    await reloadDB();
+                    console.log("DB Hot Reloaded.");
+
+                    // Cleanup
+                    if(fs.existsSync(zipPath)) fs.unlinkSync(zipPath);
+
+                    // Send Success (Server stays alive!)
+                    res.status(200).json({ success: true, data: "Restore complete! Data refreshed." });
+
+                } catch (writeErr) {
+                    console.error("Write Error:", writeErr);
+                    // Try to reconnect even if write failed to save the app
+                    await reloadDB();
+                    res.status(500).json({ success: false, data: "Restore Write Failed." });
+                }
+            });
             
         } else {
-            fs.unlinkSync(zipPath);
+            if(fs.existsSync(zipPath)) fs.unlinkSync(zipPath);
             res.status(200).json({ success: true, data: "Images restored. No DB found." });
         }
 
