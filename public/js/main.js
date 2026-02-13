@@ -15,6 +15,21 @@ const state = {
     documentPage: 1, documentSearch: '', documentCategory: ''
 };
 
+let lockoutTimer;
+function resetLockout() {
+    clearTimeout(lockoutTimer);
+    // 30 minutes = 30 * 60 * 1000
+    lockoutTimer = setTimeout(() => {
+        alert("Session expired due to inactivity.");
+        sessionStorage.removeItem('token');
+        window.location.href = 'index.html';
+    }, 30 * 60 * 1000);
+}
+// Listen for activity
+window.onload = resetLockout;
+document.onmousemove = resetLockout;
+document.onkeydown = resetLockout;
+
 // --- HELPER: Load Paginated Data ---
 async function loadPaginatedData(apiMethod, renderMethod, listDiv, paginationDiv, pageStateKey, searchStateKey = null, ...filterKeys) {
     if (!listDiv) return;
@@ -1833,5 +1848,27 @@ document.addEventListener('DOMContentLoaded', async () => {
                 } catch(err) { alert("Restore failed"); }
             });
         }
+
+
+        const res = await fetch('/api/system/settings', { 
+            headers: { 'Authorization': `Bearer ${token}` } 
+        });
+        const data = await res.json();
+        if(data.success) document.getElementById('admin-email-input').value = data.data.admin_email;
+
+        // Save email
+        document.getElementById('settings-email-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('admin-email-input').value;
+            try {
+                const updateRes = await fetch('/api/system/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ admin_email: email })
+                });
+                const resData = await updateRes.json();
+                if(resData.success) alert("Email updated!");
+            } catch(err) { alert("Error updating email"); }
+        });
     }
 });

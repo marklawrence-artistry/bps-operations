@@ -1,6 +1,8 @@
 const logAudit = require('../utils/audit-logger');
 const { all, get, run } = require('../utils/db-async');
 const { getIO } = require('../utils/socket');
+const fs = require('fs');     // <--- MISSING IMPORT
+const path = require('path'); 
 
 const getAllDocuments = async (req, res) => {
     try {

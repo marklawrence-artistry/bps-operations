@@ -236,6 +236,18 @@ const initDB = () => {
             }
         })
 
+        db.run(`
+            CREATE TABLE IF NOT EXISTS settings (
+                key TEXT PRIMARY KEY,
+                value TEXT
+            );
+        `, (err) => {
+            if(!err) {
+                // Insert default admin email if not exists
+                db.run(`INSERT OR IGNORE INTO settings (key, value) VALUES ('admin_email', 'admin@bps.com')`);
+            }
+        });
+
 
         // Add initial admin account
         async function seedAdmin() {

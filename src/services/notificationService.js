@@ -9,6 +9,9 @@ const checkExpiringDocuments = async (isTest = false) => {
         return;
     }
 
+    const setting = await get(`SELECT value FROM settings WHERE key = 'admin_email'`);
+    const adminEmail = setting ? setting.value : process.env.ADMIN_EMAIL;
+
     const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
     apiInstance.setApiKey(
         SibApiV3Sdk.TransactionalEmailsApiApiKeys.apiKey, 
@@ -20,27 +23,21 @@ const checkExpiringDocuments = async (isTest = false) => {
 
     // 1. QUERY SELECTION
     if (!isTest) {
-        // PRODUCTION: Strict dates (7 days or 30 days exactly)
+        // PRODUCTION: Uses 'localtime' to ensure server timezone matches user expectation
+        // Checks strictly for 30 days OR 7 days
         query = `
             SELECT d.id, d.title, d.expiry_date, d.category
             FROM documents d
             WHERE 
-                (date(d.expiry_date) = date('now', '+30 days') 
+                (date(d.expiry_date) = date('now', 'localtime', '+30 days') 
                 AND NOT EXISTS (SELECT 1 FROM notification_logs nl WHERE nl.document_id = d.id AND nl.trigger_type = '30_day_warning'))
             OR 
-                (date(d.expiry_date) = date('now', '+7 days') 
+                (date(d.expiry_date) = date('now', 'localtime', '+7 days') 
                 AND NOT EXISTS (SELECT 1 FROM notification_logs nl WHERE nl.document_id = d.id AND nl.trigger_type = '7_day_warning'))
         `;
     } else {
-        // TEST MODE: Get ALL active documents expiring in the next 365 days (Mockup scenario)
-        // We limit to 20 just to keep the email readable for the demo
-        query = `
-            SELECT d.id, d.title, d.expiry_date, d.category
-            FROM documents d
-            WHERE date(d.expiry_date) > date('now') 
-            ORDER BY d.expiry_date ASC
-            LIMIT 20
-        `;
+        // TEST MODE: Get ANY document expiring in the future
+        query = `SELECT id, title, expiry_date, category FROM documents WHERE date(expiry_date) >= date('now') LIMIT 20`;
     }
 
     try {
