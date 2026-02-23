@@ -2,30 +2,62 @@ import * as api from './api.js';
 import * as render from './render.js';
 
 window.alert = function(message) {
-    let modal = document.getElementById('custom-alert-modal');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'custom-alert-modal';
-        modal.className = 'modal';
-        modal.innerHTML = `
-            <div class="modal-content" style="max-width: 400px; text-align: center; animation: modalFadeIn 0.2s ease;">
-                <div class="modal-header" style="justify-content: center; border-bottom: none; padding-top: 2rem;">
-                    <h2 style="color: #111827; font-size: 1.25rem;">System Notice</h2>
-                </div>
-                <div class="modal-body" style="padding: 0 2rem 2rem;">
-                    <p id="custom-alert-message" style="color: #4b5563; margin-bottom: 1.5rem; line-height: 1.5;"></p>
-                    <button id="custom-alert-btn" class="btn-orange" style="width: 100%;">OK</button>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
+    return new Promise((resolve) => {
+        let modal = document.getElementById('custom-alert-modal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'custom-alert-modal';
+            modal.className = 'modal';
+            modal.innerHTML = `
+                <div class="modal-content" style="max-width: 400px; text-align: center; animation: modalFadeIn 0.2s ease; z-index: 9999;">
+                    <div class="modal-header" style="justify-content: center; border-bottom: none; padding-top: 2rem;">
+                        <h2 style="color: #111827; font-size: 1.25rem;">System Notice</h2>
+                    </div>
+                    <div class="modal-body" style="padding: 0 2rem 2rem;">
+                        <p id="custom-alert-message" style="color: #4b5563; margin-bottom: 1.5rem; line-height: 1.5;"></p>
+                        <button id="custom-alert-btn" class="btn-orange" style="width: 100%;">OK</button>
+                    </div>
+                </div>`;
+            document.body.appendChild(modal);
+        }
+        document.getElementById('custom-alert-message').innerText = message;
+        modal.style.display = 'flex';
         
-        document.getElementById('custom-alert-btn').addEventListener('click', () => {
+        document.getElementById('custom-alert-btn').onclick = () => {
             modal.style.display = 'none';
-        });
-    }
-    document.getElementById('custom-alert-message').innerText = message;
-    modal.style.display = 'flex';
+            resolve();
+        };
+    });
+};
+
+window.customConfirm = function(message) {
+    return new Promise((resolve) => {
+        let modal = document.getElementById('custom-confirm-modal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'custom-confirm-modal';
+            modal.className = 'modal';
+            modal.innerHTML = `
+                <div class="modal-content" style="max-width: 400px; text-align: center; animation: modalFadeIn 0.2s ease; z-index: 9999;">
+                    <div class="modal-header" style="justify-content: center; border-bottom: none; padding-top: 2rem;">
+                        <h2 style="color: #111827; font-size: 1.25rem;">Confirm Action</h2>
+                    </div>
+                    <div class="modal-body" style="padding: 0 2rem 2rem;">
+                        <p id="custom-confirm-message" style="color: #4b5563; margin-bottom: 1.5rem; line-height: 1.5;"></p>
+                        <div style="display: flex; gap: 1rem;">
+                            <button id="custom-confirm-cancel" style="flex: 1; padding: 0.8rem; border-radius: 10px; border: 1px solid #e5e7eb; background: white; cursor: pointer;">Cancel</button>
+                            <button id="custom-confirm-yes" class="btn-orange" style="flex: 1; background-color: #ef4444;">Yes, Proceed</button>
+                        </div>
+                    </div>
+                </div>`;
+            document.body.appendChild(modal);
+        }
+        document.getElementById('custom-confirm-message').innerText = message;
+        modal.style.display = 'flex';
+        
+        document.getElementById('custom-confirm-cancel').onclick = () => { modal.style.display = 'none'; resolve(false); };
+        document.getElementById('custom-confirm-yes').onclick = () => { modal.style.display = 'none'; resolve(true); };
+    });
 };
 
 let currentAccount = null;
@@ -86,6 +118,11 @@ async function loadPaginatedData(apiMethod, renderMethod, listDiv, paginationDiv
         if (err.message && (err.message.includes("token") || err.message.includes("expired"))) {
             localStorage.removeItem('token');
             location.href = 'index.html';
+        } else if (err.message && (err.message.includes("Access denied") || err.message.includes("denied"))) {
+            await window.alert("Access Denied. You do not have permission to view this page.");
+            window.location.href = 'dashboard.html';
+        } else {
+            await window.alert(err.message);
         }
     }
 }
@@ -173,7 +210,7 @@ function setupMultiDelete(listDivId, btnId, deleteApiCallback, refreshCallback) 
         const ids = getSelectedIds();
         if (ids.length === 0) return;
 
-        if (confirm(`Are you sure you want to delete ${ids.length} items? This cannot be undone.`)) {
+        if (await customConfirm(`Are you sure you want to delete ${ids.length} items? This cannot be undone.`)) {
             const token = JSON.parse(localStorage.getItem('token'));
             try {
                 // Execute deletes in parallel
@@ -282,7 +319,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const testEmailBtn = document.getElementById('test-email-btn');
     if (testEmailBtn) {
         testEmailBtn.addEventListener('click', async () => {
-            if(!confirm("Send a test email summary of all documents to the Admin?")) return;
+            if (!(await customConfirm("Send a test email summary of all documents to the Admin?"))) return;
 
             // 1. Get Token
             let token = localStorage.getItem('token');
@@ -515,20 +552,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             // Delete
             if (e.target.classList.contains('delete-btn')) {
-                if (confirm("Delete this account?")) {
+                if (await customConfirm("Delete this account?")) {
                     await api.deleteAccount(id, token);
                     loadPaginatedData(api.getAllAccounts, render.renderAccountsTable, accountListDiv, paginationDiv, 'accountPage');
                 }
             }
             // Disable/Enable
             if (e.target.classList.contains('disable-btn')) {
-                if (confirm("Disable this account?")) {
+                if (await customConfirm("Disable this account?")) {
                     await api.disableAccount(id, token);
                     loadPaginatedData(api.getAllAccounts, render.renderAccountsTable, accountListDiv, paginationDiv, 'accountPage');
                 }
             }
             if (e.target.classList.contains('enable-btn')) {
-                if (confirm("Enable this account?")) {
+                if (await customConfirm("Enable this account?")) {
                     await api.enableAccount(id, token);
                     loadPaginatedData(api.getAllAccounts, render.renderAccountsTable, accountListDiv, paginationDiv, 'accountPage');
                 }
@@ -649,7 +686,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const token = JSON.parse(localStorage.getItem('token'));
 
             if(e.target.classList.contains('delete-btn')) {
-                if(confirm("Delete item?")) {
+                if (await customConfirm("Delete item?")) {
                     await api.deleteInventory(id, token);
                     loadPaginatedData(api.getAllInventory, render.renderInventoryTable, inventoryListDiv, paginationDiv, 'inventoryPage');
                 }
@@ -805,7 +842,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 
                 // DELETE
                 if(e.target.classList.contains('delete-btn')) {
-                    if(confirm("Delete this category? Items in this category might lose their association.")) {
+                    if (await customConfirm("Delete this category? Items in this category might lose their association.")) {
                         try {
                             await api.deleteInventoryCategory(id, token);
                             loadPaginatedData(api.getAllInventoryCategories, render.renderInventoryCategoriesTable, catListDiv, catPagination, 'inventoryCatPage');
@@ -894,7 +931,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // DELETE ACTION
             if (e.target.classList.contains('delete-btn')) {
-                if (confirm("Are you sure you want to delete this seller?")) {
+                if (await customConfirm("Are you sure you want to delete this seller?")) {
                     try {
                         await api.deleteSeller(id, token);
                         alert("Seller deleted successfully.");
@@ -1050,7 +1087,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // DELETE ACTION
             if(e.target.classList.contains('delete-btn')) {
-                if(confirm("Are you sure you want to delete this record?")) {
+                if (await customConfirm("Are you sure you want to delete this record?")) {
                     try {
                         await api.deleteRTS(id, token);
                         alert("Record deleted.");
@@ -1255,7 +1292,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // DELETE ACTION
             if (e.target.classList.contains('delete-btn')) {
-                if (confirm("Are you sure you want to delete this sales record?")) {
+                if (await customConfirm("Are you sure you want to delete this sales record?")) {
                     try {
                         await api.deleteSale(id, token);
                         alert("Record deleted successfully.");
@@ -1400,7 +1437,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // DELETE ACTION
             if(e.target.classList.contains('delete-btn')) {
-                if(confirm("Are you sure you want to delete this document?")) {
+                if (await customConfirm("Are you sure you want to delete this document?")) {
                     try {
                         await api.deleteDocument(id, token);
                         alert("Document deleted.");
@@ -1827,6 +1864,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else {
             window.location.href = 'index.html';
         }
+
+        try {
+            const healthRes = await fetch('/api/system/health', { headers: { 'Authorization': `Bearer ${token}` } });
+            const healthData = await healthRes.json();
+            if(healthData.success) {
+                document.getElementById('health-uptime').innerText = healthData.data.uptime;
+                document.getElementById('health-dbsize').innerText = healthData.data.dbSize + ' MB';
+                document.getElementById('health-lastbackup').innerText = healthData.data.lastBackup;
+            }
+        } catch(err) { console.error("Failed to load health:", err); }
 
         // 2. LOAD CURRENT EMAIL
         const emailInput = document.getElementById('admin-email-input');

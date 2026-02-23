@@ -33,19 +33,75 @@ const createBackup = async (req, res) => {
     try {
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
         const filename = `bps_backup_${timestamp}.zip`;
-        res.attachment(filename);
-
+        
+        // Ensure backups directory exists
+        const backupDir = process.env.RAILWAY_VOLUME_MOUNT_PATH 
+            ? path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH, 'backups') 
+            : path.join(__dirname, '../../backups');
+            
+        if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true });
+        
+        const filePath = path.join(backupDir, filename);
+        const output = fs.createWriteStream(filePath);
         const archive = archiver('zip', { zlib: { level: 9 } });
-        archive.on('error', (err) => res.status(500).send({error: err.message}));
-        archive.pipe(res);
 
-        // NOTE: We do not close the DB here. Sqlite allows reading while open.
+        output.on('close', () => {
+            // Send the saved file to the user
+            res.download(filePath, filename);
+        });
+
+        archive.on('error', (err) => res.status(500).send({error: err.message}));
+        archive.pipe(output);
+
         if (fs.existsSync(DB_PATH)) archive.file(DB_PATH, { name: DB_NAME });
         if (fs.existsSync(UPLOADS_PATH)) archive.directory(UPLOADS_PATH, 'uploads');
 
         await archive.finalize();
     } catch (error) {
         if(!res.headersSent) res.status(500).json({ success: false, data: "Backup failed." });
+    }
+};
+
+// --- SYSTEM HEALTH ---
+const getSystemHealth = async (req, res) => {
+    try {
+        // 1. Server Uptime
+        const uptimeSeconds = process.uptime();
+        const hours = Math.floor(uptimeSeconds / 3600);
+        const minutes = Math.floor((uptimeSeconds % 3600) / 60);
+        const uptimeFormatted = `${hours}h ${minutes}m`;
+
+        // 2. Database Size
+        let dbSizeMB = "0.00";
+        if (fs.existsSync(DB_PATH)) {
+            const stats = fs.statSync(DB_PATH);
+            dbSizeMB = (stats.size / (1024 * 1024)).toFixed(2);
+        }
+
+        // 3. Last Backup
+        const backupDir = process.env.RAILWAY_VOLUME_MOUNT_PATH 
+            ? path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH, 'backups') 
+            : path.join(__dirname, '../../backups');
+            
+        let lastBackupDate = "No backups yet";
+        
+        if (fs.existsSync(backupDir)) {
+            const files = fs.readdirSync(backupDir).filter(f => f.endsWith('.zip'));
+            if (files.length > 0) {
+                const sortedFiles = files.map(f => ({
+                    name: f,
+                    time: fs.statSync(path.join(backupDir, f)).mtime.getTime()
+                })).sort((a, b) => b.time - a.time);
+                lastBackupDate = new Date(sortedFiles[0].time).toLocaleString();
+            }
+        }
+
+        res.status(200).json({
+            success: true,
+            data: { uptime: uptimeFormatted, dbSize: dbSizeMB, lastBackup: lastBackupDate }
+        });
+    } catch(err) {
+        res.status(500).json({ success: false, data: err.message });
     }
 };
 
@@ -116,4 +172,4 @@ const restoreBackup = async (req, res) => {
     }
 };
 
-module.exports = { createBackup, restoreBackup, getSettings, updateSettings };
+module.exports = { createBackup, getSystemHealth, restoreBackup, getSettings, updateSettings };

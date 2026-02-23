@@ -1,6 +1,9 @@
+const path = require('path');
+const fs = require('fs');
 const logAudit = require('../utils/audit-logger');
 const { all, get, run } = require('../utils/db-async');
 const { getIO } = require('../utils/socket');
+
 
 // --- INVENTORY CATEGORIES ---
 
