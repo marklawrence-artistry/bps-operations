@@ -20,6 +20,9 @@ const createInventoryCategory = async (req, res) => {
         await logAudit(req.user.id, 'CREATE', 'inventory_categories', result.lastID, `Created category ${name}`, req.ip);
         res.status(201).json({ success: true, data: "Category created.", id: result.lastID });
     } catch (err) {
+        if (err.message.includes('UNIQUE constraint failed: inventory_categories.name')) {
+            return res.status(400).json({ success: false, data: "A category with this exact name already exists in the inventory categories." });
+        }
         res.status(500).json({ success: false, data: `Error: ${err.message}` });
     }
 };
@@ -152,6 +155,9 @@ const createInventory = async (req, res) => {
         getIO().emit('inventory_update');
         res.status(200).json({ success: true, data: "Item created.", id: result.lastID });
     } catch (err) {
+        if (err.message.includes('UNIQUE constraint failed: inventory.name')) {
+            return res.status(400).json({ success: false, data: "An item with this exact name already exists in the inventory." });
+        }
         res.status(500).json({ success: false, data: `Error: ${err.message}` });
     }
 };
@@ -185,6 +191,9 @@ const deleteInventory = async (req, res) => {
 
         res.status(200).json({ success: true, data: "Item deleted." });
     } catch (err) {
+        if (err.message.includes('UNIQUE constraint failed: inventory.name')) {
+            return res.status(400).json({ success: false, data: "An item with this exact name already exists in the inventory." });
+        }
         res.status(500).json({ success: false, data: `Error: ${err.message}` });
     }
 };
@@ -228,6 +237,9 @@ const updateInventory = async (req, res) => {
 
         res.status(200).json({ success: true, data: "Item updated." });
     } catch (err) {
+        if (err.message.includes('UNIQUE constraint failed: inventory.name')) {
+            return res.status(400).json({ success: false, data: "An item with this exact name already exists in the inventory." });
+        }
         res.status(500).json({ success: false, data: `Error: ${err.message}` });
     }
 };

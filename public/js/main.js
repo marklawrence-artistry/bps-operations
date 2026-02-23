@@ -259,7 +259,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // 1. Get Token
             let token = localStorage.getItem('token');
-            console.log("Raw Token from Storage:", token); // Check console to see what this prints
 
             if (!token) {
                 alert("You are not logged in (Token missing).");
@@ -698,7 +697,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             inventoryForm.querySelector('#inventory-staff-id').value = currentAccount.id;
             inventoryForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                console.log(currentAccount);
                 
                 const formData = new FormData();
 
@@ -1494,16 +1492,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             const peso = new Intl.NumberFormat('en-PH', { 
                 style: 'currency', 
                 currency: 'PHP', 
-                maximumFractionDigits: 0,
-                notation: "compact", // e.g. 8.4k
-                compactDisplay: "short"
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
             });
 
             if(elSales) elSales.innerText = peso.format(stats.salesMonthTotal);
             if(elSellers) elSellers.innerText = stats.sellerCount;
             
-            const fullPeso = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
-            if(elChartTotal) elChartTotal.innerText = fullPeso.format(stats.chart.grandTotal);
+            // Apply the exact same raw formatting to the charts
+            if(elChartTotal) elChartTotal.innerText = peso.format(stats.chart.grandTotal);
             if(elChartTotalLarge) elChartTotalLarge.innerText = peso.format(stats.chart.grandTotal);
 
             // 3. Render Line Chart

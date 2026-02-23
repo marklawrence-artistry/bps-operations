@@ -126,6 +126,9 @@ const createUser = async (req, res) => {
         getIO().emit('account_update');
         res.status(201).json({ success: true, data: "User created.", id: result.lastID });
     } catch (err) {
+        if (err.message.includes('UNIQUE constraint failed: users.name') || err.message.includes('UNIQUE constraint failed: users.email')) {
+            return res.status(400).json({ success: false, data: "An account with this exact username OR email already exists in the users." });
+        }
         res.status(500).json({ success: false, data: `Error: ${err.message}` });
     }
 };
@@ -168,6 +171,9 @@ const updateUser = async (req, res) => {
         getIO().emit('account_update');
         res.status(200).json({ success: true, data: "User updated." });
     } catch (err) {
+        if (err.message.includes('UNIQUE constraint failed: inventory.username')) {
+            return res.status(400).json({ success: false, data: "An item with this exact name already exists in the inventory." });
+        }
         res.status(500).json({ success: false, data: `Error: ${err.message}` });
     }
 };
