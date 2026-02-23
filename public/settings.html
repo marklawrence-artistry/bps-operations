@@ -80,6 +80,30 @@
                         </div>
                     </div>
 
+                    <div class="form-wrapper admin-nav" style="flex: 1; min-width: 300px;">
+                        <div class="table-card" style="padding: 2rem; background-color: #f9fafb;">
+                            <h2 style="margin-bottom: 1.5rem;">System Health</h2>
+                            
+                            <div style="background: white; padding: 1.5rem; border-radius: 12px; margin-bottom: 1rem; border: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <h3 style="margin-bottom: 0.2rem; font-size: 0.9rem; color: #6b7280;">Server Uptime</h3>
+                                    <p id="health-uptime" style="font-size: 1.25rem; font-weight: 700; color: #111827;">Loading...</p>
+                                </div>
+                                <span class="status-badge active">Online</span>
+                            </div>
+
+                            <div style="background: white; padding: 1.5rem; border-radius: 12px; margin-bottom: 1rem; border: 1px solid #e5e7eb;">
+                                <h3 style="margin-bottom: 0.2rem; font-size: 0.9rem; color: #6b7280;">Database Size</h3>
+                                <p id="health-dbsize" style="font-size: 1.25rem; font-weight: 700; color: #111827;">Loading...</p>
+                            </div>
+
+                            <div style="background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid #e5e7eb;">
+                                <h3 style="margin-bottom: 0.2rem; font-size: 0.9rem; color: #6b7280;">Last System Backup</h3>
+                                <p id="health-lastbackup" style="font-size: 1rem; font-weight: 600; color: #111827;">Loading...</p>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- 2. SYSTEM CONFIG (Email & Backup) - ADMIN ONLY -->
                     <!-- Added 'admin-nav' class here -->
                     <div class="form-wrapper admin-nav" style="flex: 1; min-width: 300px;">

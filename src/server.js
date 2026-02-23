@@ -5,6 +5,7 @@ const socketUtil = require('./utils/socket');
 const express = require('express');
 const cors = require('cors');
 const { db, initDB } = require('./database');
+const { run } = require('./utils/db-async');
 const path = require('path');
 const cron = require('node-cron');
 const { checkExpiringDocuments } = require('./services/notificationService');
@@ -76,9 +77,24 @@ cron.schedule('0 8 * * *', () => {
     timezone: "Asia/Manila"
 });
 
+cron.schedule('0 0 * * *', async () => {
+    // Runs every day at Midnight (00:00)
+    try {
+        console.log("Running Audit Log Cleanup...");
+        // Deletes logs older than 30 days
+        const result = await run(`DELETE FROM audit_logs WHERE created_at <= datetime('now', '-30 days')`);
+        console.log("Old audit logs cleared successfully.");
+    } catch (err) {
+        console.error("Failed to clean audit logs:", err.message);
+    }
+}, {
+    scheduled: true,
+    timezone: "Asia/Manila"
+});
+
 console.log("Scheduled document checker to run daily at 8:00 AM.");
 
 // Initial Routes
-server.listen(PORT, '0.0.0.0', () => { // '0.0.0.0' allows access from phone
+server.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running at http://localhost:${PORT}`);
 });

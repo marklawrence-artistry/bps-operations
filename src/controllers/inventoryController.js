@@ -1,6 +1,9 @@
+const path = require('path');
+const fs = require('fs');
 const logAudit = require('../utils/audit-logger');
 const { all, get, run } = require('../utils/db-async');
 const { getIO } = require('../utils/socket');
+
 
 // --- INVENTORY CATEGORIES ---
 
@@ -20,6 +23,9 @@ const createInventoryCategory = async (req, res) => {
         await logAudit(req.user.id, 'CREATE', 'inventory_categories', result.lastID, `Created category ${name}`, req.ip);
         res.status(201).json({ success: true, data: "Category created.", id: result.lastID });
     } catch (err) {
+        if (err.message.includes('UNIQUE constraint failed: inventory_categories.name')) {
+            return res.status(400).json({ success: false, data: "A category with this exact name already exists in the inventory categories." });
+        }
         res.status(500).json({ success: false, data: `Error: ${err.message}` });
     }
 };
@@ -31,6 +37,27 @@ const deleteInventoryCategory = async (req, res) => {
         await logAudit(req.user.id, 'DELETE', 'inventory_categories', id, `Deleted category ID: ${id}`, req.ip);
         res.status(200).json({ success: true, data: "Category deleted." });
     } catch (err) {
+        res.status(500).json({ success: false, data: `Error: ${err.message}` });
+    }
+};
+
+const updateInventoryCategory = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, description } = req.body;
+
+        await run(`
+            UPDATE inventory_categories 
+            SET name = COALESCE(?, name), description = COALESCE(?, description) 
+            WHERE id = ?
+        `, [name, description, id]);
+
+        await logAudit(req.user.id, 'UPDATE', 'inventory_categories', id, `Updated category ID: ${id}`, req.ip);
+        res.status(200).json({ success: true, data: "Category updated." });
+    } catch (err) {
+        if (err.message.includes('UNIQUE')) {
+            return res.status(400).json({ success: false, data: "A category with this name already exists." });
+        }
         res.status(500).json({ success: false, data: `Error: ${err.message}` });
     }
 };
@@ -152,6 +179,9 @@ const createInventory = async (req, res) => {
         getIO().emit('inventory_update');
         res.status(200).json({ success: true, data: "Item created.", id: result.lastID });
     } catch (err) {
+        if (err.message.includes('UNIQUE constraint failed: inventory.name')) {
+            return res.status(400).json({ success: false, data: "An item with this exact name already exists in the inventory." });
+        }
         res.status(500).json({ success: false, data: `Error: ${err.message}` });
     }
 };
@@ -185,6 +215,9 @@ const deleteInventory = async (req, res) => {
 
         res.status(200).json({ success: true, data: "Item deleted." });
     } catch (err) {
+        if (err.message.includes('UNIQUE constraint failed: inventory.name')) {
+            return res.status(400).json({ success: false, data: "An item with this exact name already exists in the inventory." });
+        }
         res.status(500).json({ success: false, data: `Error: ${err.message}` });
     }
 };
@@ -228,6 +261,9 @@ const updateInventory = async (req, res) => {
 
         res.status(200).json({ success: true, data: "Item updated." });
     } catch (err) {
+        if (err.message.includes('UNIQUE constraint failed: inventory.name')) {
+            return res.status(400).json({ success: false, data: "An item with this exact name already exists in the inventory." });
+        }
         res.status(500).json({ success: false, data: `Error: ${err.message}` });
     }
 };
@@ -235,6 +271,7 @@ const updateInventory = async (req, res) => {
 module.exports = {
     createInventoryCategory,
     deleteInventoryCategory,
+    updateInventoryCategory,
     getAllInventoryCategories,
     getAllInventory,
     createInventory,

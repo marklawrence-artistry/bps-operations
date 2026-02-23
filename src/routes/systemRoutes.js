@@ -11,5 +11,6 @@ router.post('/settings', verifyToken, isAdmin, systemController.updateSettings);
 // Backup/Restore
 router.get('/backup', verifyToken, isAdmin, systemController.createBackup);
 router.post('/restore', verifyToken, isAdmin, upload.single('backup_file'), systemController.restoreBackup);
+router.get('/health', verifyToken, isAdmin, systemController.getSystemHealth);
 
 module.exports = router;

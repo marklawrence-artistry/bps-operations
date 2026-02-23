@@ -1,6 +1,9 @@
 const logAudit = require('../utils/audit-logger');
 const { all, get, run } = require('../utils/db-async');
 const { getIO } = require('../utils/socket');
+// --- MISSING IMPORTS WERE HERE ---
+const path = require('path'); 
+const fs = require('fs');
 
 const createSeller = async (req, res) => {
     try {
@@ -28,7 +31,6 @@ const createSeller = async (req, res) => {
     }
 };
 
-// Update getAllSeller logic similarly:
 const getAllSeller = async (req, res) => {
     try {
         if (req.query.all === 'true') {
@@ -41,7 +43,6 @@ const getAllSeller = async (req, res) => {
         const search = req.query.search || '';
         const offset = (page - 1) * limit;
 
-        // REPLACE query block (approx lines 40-50)
         let query = `SELECT id, name, category, contact_num, email, image_path, platform_name, created_at FROM seller WHERE 1=1`;
         let countQuery = `SELECT COUNT(*) as count FROM seller WHERE 1=1`;
         let params = [];
@@ -126,6 +127,7 @@ const deleteSeller = async (req, res) => {
     try {
         const { id } = req.params;
 
+        // This query was failing because 'path' wasn't imported
         const seller = await get(`SELECT image_path FROM seller WHERE id = ?`, [id]);
 
         if (seller && seller.image_path) {

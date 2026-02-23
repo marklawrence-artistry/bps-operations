@@ -160,6 +160,14 @@
                                 <input type="text" id="rts-customer" placeholder="Who returned it?" required>
                             </div>
 
+                            <div class="form-item" id="rts-status-container" style="display: none;">
+                                <label for="rts-status">Status</label>
+                                <select id="rts-status">
+                                    <option value="pending">Pending</option>
+                                    <option value="returned_to_seller">Returned</option>
+                                </select>
+                            </div>
+
                             <div class="form-item">
                                 <label for="rts-desc">Reason / Description</label>
                                 <textarea id="rts-desc" rows="4" placeholder="Reason for return..."></textarea>
