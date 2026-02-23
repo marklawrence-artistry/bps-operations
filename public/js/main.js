@@ -229,6 +229,12 @@ function setupMultiDelete(listDivId, btnId, deleteApiCallback, refreshCallback) 
 
 document.addEventListener('DOMContentLoaded', async () => {
 
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js')
+            .then(reg => console.log('Service Worker Registered!', reg.scope))
+            .catch(err => console.log('Service Worker Registration Failed:', err));
+    }
+
     const socket = io();
     // 1. Inventory Listener
     if (document.querySelector('#inventory-list')) {
@@ -1125,6 +1131,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                     rtsForm.querySelector('#rts-customer').value = item.customer_name;
                     rtsForm.querySelector('#rts-desc').value = item.description;
 
+                    const statusContainer = document.getElementById('rts-status-container');
+                    const statusSelect = document.getElementById('rts-status');
+                    if(statusContainer && statusSelect) {
+                        statusContainer.style.display = 'block';
+                        statusSelect.value = item.status || 'pending';
+                    }
+
                     // 4. UI Updates
                     document.querySelector('#form-title').innerText = "Edit Returned Item";
                     rtsForm.style.display = "block";
@@ -1149,6 +1162,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 rtsForm.reset();
                 rtsForm.querySelector('#rts-id').value = "";
                 document.querySelector('#form-title').innerText = "Log Returned Item";
+                
+                // HIDE STATUS ON CREATE
+                const statusContainer = document.getElementById('rts-status-container');
+                if(statusContainer) statusContainer.style.display = 'none'; 
                 
                 // Load Sellers for Dropdown
                 try {
@@ -1181,12 +1198,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         if(rtsForm) {
             rtsForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
+
+                const statusVal = document.getElementById('rts-status').value;
+                
                 const data = {
                     tracking_no: rtsForm.querySelector('#rts-tracking').value,
                     seller_id: rtsForm.querySelector('#rts-seller-id').value,
                     product_name: rtsForm.querySelector('#rts-product').value,
                     customer_name: rtsForm.querySelector('#rts-customer').value,
-                    description: rtsForm.querySelector('#rts-desc').value
+                    description: rtsForm.querySelector('#rts-desc').value,
+                    status: statusVal // Add this line
                 };
                 const id = rtsForm.querySelector('#rts-id').value;
                 const token = JSON.parse(localStorage.getItem('token'));
