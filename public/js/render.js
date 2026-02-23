@@ -154,6 +154,7 @@ export function renderInventoryCategoriesTable(data, container) {
                 <td>${element.description}</td>
                 <td>
                     <div class="action-buttons">
+                        <button class='btn edit-btn'>Edit</button>
                         <button class='btn delete-btn'>Delete</button>
                     </div>
                 </td>

@@ -89,24 +89,24 @@ const deleteDocument = async (req, res) => {
     try {
         const { id } = req.params;
         
+        // 1. Delete the physical file (Keep this logic)
         const doc = await get(`SELECT file_path FROM documents WHERE id = ?`, [id]);
-
         if (doc && doc.file_path) {
-            // FIX: Ensure URL parsing doesn't crash if malformed
+            // ... (keep your existing file deletion code here) ...
             const filename = doc.file_path.split('/').pop();
             const uploadDir = process.env.RAILWAY_VOLUME_MOUNT_PATH 
                 ? path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH, 'uploads')
                 : path.join(__dirname, '../../public/uploads');
-            
             const filePath = path.join(uploadDir, filename);
-
-            if (fs.existsSync(filePath)) {
-                fs.unlinkSync(filePath);
-            }
+            if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
         }
 
-        await run(`DELETE FROM documents WHERE id = ?`, [id]);
+        // 2. *** FIX IS HERE: SWAP THESE TWO LINES ***
+        // Delete the Child (Logs) FIRST
         await run(`DELETE FROM notification_logs WHERE document_id = ?`, [id]);
+        
+        // Delete the Parent (Document) SECOND
+        await run(`DELETE FROM documents WHERE id = ?`, [id]);
         
         await logAudit(req.user.id, 'DELETE', 'documents', id, `Deleted Doc ID: ${id}`, req.ip);
         getIO().emit('document_update');

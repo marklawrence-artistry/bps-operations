@@ -1,6 +1,33 @@
 import * as api from './api.js';
 import * as render from './render.js';
 
+window.alert = function(message) {
+    let modal = document.getElementById('custom-alert-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'custom-alert-modal';
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 400px; text-align: center; animation: modalFadeIn 0.2s ease;">
+                <div class="modal-header" style="justify-content: center; border-bottom: none; padding-top: 2rem;">
+                    <h2 style="color: #111827; font-size: 1.25rem;">System Notice</h2>
+                </div>
+                <div class="modal-body" style="padding: 0 2rem 2rem;">
+                    <p id="custom-alert-message" style="color: #4b5563; margin-bottom: 1.5rem; line-height: 1.5;"></p>
+                    <button id="custom-alert-btn" class="btn-orange" style="width: 100%;">OK</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        
+        document.getElementById('custom-alert-btn').addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+    }
+    document.getElementById('custom-alert-message').innerText = message;
+    modal.style.display = 'flex';
+};
+
 let currentAccount = null;
 
 // Global State for Pagination
@@ -771,34 +798,54 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // 3. Delete Category Logic
             catListDiv.addEventListener('click', async (e) => {
+                const row = e.target.closest('tr');
+                if(!row) return;
+                const id = row.dataset.id;
+                const token = JSON.parse(localStorage.getItem('token'));
+                
+                // DELETE
                 if(e.target.classList.contains('delete-btn')) {
-                    const row = e.target.closest('tr');
-                    const id = row.dataset.id;
-                    const token = JSON.parse(localStorage.getItem('token'));
-                    
                     if(confirm("Delete this category? Items in this category might lose their association.")) {
                         try {
                             await api.deleteInventoryCategory(id, token);
                             loadPaginatedData(api.getAllInventoryCategories, render.renderInventoryCategoriesTable, catListDiv, catPagination, 'inventoryCatPage');
-                        } catch(err) {
-                            alert(err.message);
-                        }
+                        } catch(err) { alert(err.message); }
                     }
+                }
+
+                // EDIT (NEW)
+                if(e.target.classList.contains('edit-btn')) {
+                    const cells = row.querySelectorAll('td');
+                    catForm.querySelector('#cat-id').value = id;
+                    catForm.querySelector('#cat-name').value = cells[0].innerText;
+                    catForm.querySelector('#cat-desc').value = cells[1].innerText;
+                    document.getElementById('cat-form-title').innerText = "Edit Category";
                 }
             });
 
-            // 4. Create Category Logic
+            // Replace the old catForm.addEventListener with this:
             if(catForm) {
                 catForm.addEventListener('submit', async (e) => {
                     e.preventDefault();
+                    const id = catForm.querySelector('#cat-id').value;
                     const name = catForm.querySelector('#cat-name').value;
                     const desc = catForm.querySelector('#cat-desc').value;
                     const token = JSON.parse(localStorage.getItem('token'));
 
                     try {
-                        await api.createInventoryCategory({ name, description: desc }, token);
+                        if (id) {
+                            await api.updateInventoryCategory(id, { name, description: desc }, token);
+                            alert("Category updated.");
+                        } else {
+                            await api.createInventoryCategory({ name, description: desc }, token);
+                            alert("Category created.");
+                        }
+                        
+                        // Reset form back to Add mode
                         catForm.reset();
-                        alert("Category created.");
+                        catForm.querySelector('#cat-id').value = "";
+                        document.getElementById('cat-form-title').innerText = "Add New Category";
+                        
                         loadPaginatedData(api.getAllInventoryCategories, render.renderInventoryCategoriesTable, catListDiv, catPagination, 'inventoryCatPage');
                     } catch(err) {
                         alert(err.message);

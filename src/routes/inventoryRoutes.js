@@ -7,6 +7,7 @@ const upload = require('../middleware/upload')
 router.post('/category', verifyToken, inventoryController.createInventoryCategory);
 router.get('/category', verifyToken, inventoryController.getAllInventoryCategories);
 router.delete('/category/:id', verifyToken, inventoryController.deleteInventoryCategory);
+router.put('/category/:id', verifyToken, inventoryController.updateInventoryCategory);
 
 router.get('/', verifyToken, inventoryController.getAllInventory);
 router.get('/:id', verifyToken, inventoryController.getInventory);

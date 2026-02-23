@@ -38,6 +38,27 @@ const deleteInventoryCategory = async (req, res) => {
     }
 };
 
+const updateInventoryCategory = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, description } = req.body;
+
+        await run(`
+            UPDATE inventory_categories 
+            SET name = COALESCE(?, name), description = COALESCE(?, description) 
+            WHERE id = ?
+        `, [name, description, id]);
+
+        await logAudit(req.user.id, 'UPDATE', 'inventory_categories', id, `Updated category ID: ${id}`, req.ip);
+        res.status(200).json({ success: true, data: "Category updated." });
+    } catch (err) {
+        if (err.message.includes('UNIQUE')) {
+            return res.status(400).json({ success: false, data: "A category with this name already exists." });
+        }
+        res.status(500).json({ success: false, data: `Error: ${err.message}` });
+    }
+};
+
 const getAllInventoryCategories = async (req, res) => {
     try {
         // If 'all' query param is present, return everything (useful for dropdowns)
@@ -247,6 +268,7 @@ const updateInventory = async (req, res) => {
 module.exports = {
     createInventoryCategory,
     deleteInventoryCategory,
+    updateInventoryCategory,
     getAllInventoryCategories,
     getAllInventory,
     createInventory,

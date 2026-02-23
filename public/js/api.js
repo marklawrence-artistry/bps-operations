@@ -208,6 +208,20 @@ export async function deleteInventoryCategory(id, token) {
     return result.data;
 }
 
+export async function updateInventoryCategory(id, data, token) {
+    const response = await fetch(`/api/inventory/category/${id}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(data)
+    });
+    const result = await response.json();
+    if(!result.success) throw new Error(result.data);
+    return result.data;
+}
+
 export async function createInventory(formData, token) {
     const response = await fetch('/api/inventory/', {
         method: 'POST',
