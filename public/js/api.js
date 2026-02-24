@@ -2,17 +2,45 @@
 async function request(url, options = {}) {
     try {
         const response = await fetch(url, options);
+        if (!response.ok) {
+            // Throw so it goes to catch block if it's a server error
+            const errText = await response.text();
+            throw new Error(errText);
+        }
         return response;
     } catch (err) {
-        // If fetch throws, it's usually a network error (Server Down / Offline)
-        console.error(`API Request Failed: ${url}`, err);
-        
-        // Trigger Offline Mode in main.js
-        if (window.ConnectivityManager) {
-            window.ConnectivityManager.handleOffline();
+        // DETECT OFFLINE OR SERVER DOWN
+        if (!navigator.onLine || err.message === 'Failed to fetch' || err.message.includes('unreachable')) {
+            
+            if (window.ConnectivityManager) window.ConnectivityManager.handleOffline();
+
+            // === OFFLINE OUTBOX LOGIC ===
+            // If it's a Data Modification (Create, Update, Delete)
+            if (options.method && options.method !== 'GET') {
+                
+                // Note: We cannot easily save image files (FormData) to localStorage.
+                if (options.body instanceof FormData) {
+                    throw new Error("File uploads are disabled while offline.");
+                }
+
+                // Save to localStorage Outbox
+                const outbox = JSON.parse(localStorage.getItem('bps_outbox')) || [];
+                outbox.push({
+                    url: url,
+                    method: options.method,
+                    body: options.body, // already stringified JSON
+                    token: options.headers?.Authorization
+                });
+                localStorage.setItem('bps_outbox', JSON.stringify(outbox));
+
+                // Return a FAKE successful response so the UI closes the form and says "Created!"
+                return {
+                    json: async () => ({ success: true, data: "Saved offline. Will sync when connection is restored." })
+                };
+            }
         }
         
-        throw new Error("Server unreachable. Please check your connection.");
+        throw new Error(err.message || "Server unreachable. Please check your connection.");
     }
 }
 

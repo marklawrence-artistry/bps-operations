@@ -53,10 +53,18 @@ const ConnectivityManager = {
     // Extracted ping logic to separate function
     async pingServer() {
         try {
-            // Add ?ping= param to explicitly bypass the Service Worker
+            let token = localStorage.getItem('token');
+            let headers = { 'Cache-Control': 'no-cache' };
+            
+            // Send token if we have it to prevent 403s
+            if (token) {
+                token = token.replace(/^"|"$/g, '');
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
             const res = await fetch(`/api/auth/me?ping=${Date.now()}`, { 
                 method: 'GET', 
-                headers: { 'Cache-Control': 'no-cache' } 
+                headers: headers
             });
 
             if (res.status >= 200 && res.status < 500) {
@@ -65,8 +73,49 @@ const ConnectivityManager = {
                 if (this.isOffline) this.handleOnline();
             }
         } catch (err) {
-            // Only triggers when Server is completely down
             if (!this.isOffline) this.handleOffline();
+        }
+    },
+
+    // Update 2: Automatically wipe Data Cache when internet returns
+    async handleOnline() {
+        if (!this.isOffline) return;
+        this.isOffline = false;
+
+        console.log("Server detected back online.");
+
+        // === WIPE THE CACHE SO TABLES GET FRESH DATA ===
+        if ('caches' in window) {
+            try {
+                await caches.delete('bps-data-v2');
+                console.log("Wiped offline cache to force fresh data.");
+            } catch(e) { console.warn("Cache wipe failed", e); }
+        }
+        
+        if (this.offlineToast) {
+            this.offlineToast.classList.remove('show');
+            this.offlineToast.classList.add('hide');
+            setTimeout(() => {
+                if (this.offlineToast) this.offlineToast.remove();
+                this.offlineToast = null;
+            }, 300);
+        }
+        
+        this.showToast("Connection restored! Syncing...", "online");
+        document.body.classList.remove('is-offline');
+
+        if (!currentAccount && localStorage.getItem('token') && !window.location.pathname.endsWith('index.html')) {
+            await checkSession();
+        }
+
+        // Process Offline Outbox
+        await this.syncOutbox();
+
+        // Refresh all tables
+        await this.refreshActivePage();
+        
+        if (typeof io !== 'undefined' && window.socket) {
+            window.socket.connect();
         }
     },
 
@@ -100,20 +149,48 @@ const ConnectivityManager = {
             }, 300);
         }
         
-        this.showToast("Connection restored! Syncing...", "online");
+        this.showToast("Connection restored! Refresh! CTRL + R", "online");
         document.body.classList.remove('is-offline');
 
-        // FIX 3: If we refreshed while offline, user data never loaded. Reload it now!
         if (!currentAccount && localStorage.getItem('token') && !window.location.pathname.endsWith('index.html')) {
             await checkSession();
         }
 
-        // Refresh Data Tables automatically
+        // === PROCESS OFFLINE OUTBOX ===
+        await this.syncOutbox();
+
         await this.refreshActivePage();
         
         if (typeof io !== 'undefined' && window.socket) {
             window.socket.connect();
         }
+    },
+
+    // NEW FUNCTION INSIDE ConnectivityManager
+    async syncOutbox() {
+        const outbox = JSON.parse(localStorage.getItem('bps_outbox')) || [];
+        if (outbox.length === 0) return;
+
+        this.showToast(`Syncing ${outbox.length} offline actions...`, "online");
+
+        for (let task of outbox) {
+            try {
+                await fetch(task.url, {
+                    method: task.method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': task.token
+                    },
+                    body: task.body
+                });
+            } catch (err) {
+                console.error("Failed to sync an offline task:", task, err);
+            }
+        }
+        
+        // Clear outbox after syncing
+        localStorage.removeItem('bps_outbox');
+        this.showToast("Offline data synced to server!", "online");
     },
 
     async refreshActivePage() {
@@ -1814,6 +1891,40 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                 });
             }
+
+            function startSystemTimers() {
+                const elEmail = document.getElementById('timer-email');
+                const elAudit = document.getElementById('timer-audit');
+                if (!elEmail || !elAudit) return;
+
+                setInterval(() => {
+                    const now = new Date();
+
+                    // 1. Calculate next 8:00 AM (Email Alert)
+                    let next8AM = new Date();
+                    next8AM.setHours(8, 0, 0, 0);
+                    if (now > next8AM) next8AM.setDate(next8AM.getDate() + 1); // If past 8am, set to tomorrow
+
+                    // 2. Calculate next 12:00 AM (Midnight / Audit Cleanup)
+                    let nextMidnight = new Date();
+                    nextMidnight.setHours(24, 0, 0, 0); // Tonight at midnight
+
+                    // Formatting function
+                    const formatTimeDiff = (target) => {
+                        const diff = target - now;
+                        const h = Math.floor((diff / (1000 * 60 * 60)) % 24).toString().padStart(2, '0');
+                        const m = Math.floor((diff / 1000 / 60) % 60).toString().padStart(2, '0');
+                        const s = Math.floor((diff / 1000) % 60).toString().padStart(2, '0');
+                        return `${h}:${m}:${s}`;
+                    };
+
+                    elEmail.innerText = formatTimeDiff(next8AM);
+                    elAudit.innerText = formatTimeDiff(nextMidnight);
+                }, 1000);
+            }
+            
+            // Start the timers immediately
+            startSystemTimers();
         } catch(err) {
             console.error("Dashboard Error:", err);
         }
