@@ -1153,3 +1153,64 @@ button[type="submit"]:hover { opacity: 0.9; }
         padding: 0.9rem 0.9rem 0.9rem 2.8rem;
     }
 }
+
+
+
+/* --- TOAST NOTIFICATIONS (Connectivity) --- */
+.toast-container {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.toast {
+    min-width: 250px;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    animation: slideInToast 0.3s ease forwards;
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.toast.hide {
+    animation: fadeOutToast 0.3s ease forwards;
+}
+
+.toast-offline {
+    background-color: #374151; /* Dark Gray */
+    border-left: 5px solid #ef4444; /* Red accent */
+}
+
+.toast-online {
+    background-color: #374151;
+    border-left: 5px solid #10b981; /* Green accent */
+}
+
+.toast-icon {
+    font-size: 1.2rem;
+}
+
+@keyframes slideInToast {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeOutToast {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(20px); }
+}
