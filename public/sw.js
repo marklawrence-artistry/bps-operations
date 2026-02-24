@@ -52,6 +52,12 @@ self.addEventListener('fetch', (event) => {
 
     const url = new URL(event.request.url);
 
+    // FIX 1: ALWAYS bypass the cache for health/ping checks
+    if (url.searchParams.has('ping')) {
+        event.respondWith(fetch(event.request));
+        return;
+    }
+
     // 1. API DATA: Network First -> Cache Fallback
     if (url.pathname.includes('/api/')) {
         event.respondWith(
