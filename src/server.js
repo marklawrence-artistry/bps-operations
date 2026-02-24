@@ -78,12 +78,11 @@ cron.schedule('0 8 * * *', () => {
 });
 
 cron.schedule('0 0 * * *', async () => {
-    // Runs every day at Midnight (00:00)
     try {
         console.log("Running Audit Log Cleanup...");
-        // Deletes logs older than 30 days
-        const result = await run(`DELETE FROM audit_logs WHERE created_at <= datetime('now', '-30 days')`);
-        console.log("Old audit logs cleared successfully.");
+        // UPDATED: Changed '-30 days' to '-1 year'
+        const result = await run(`DELETE FROM audit_logs WHERE created_at <= datetime('now', '-1 year')`);
+        console.log("Old audit logs (older than 1 year) cleared successfully.");
     } catch (err) {
         console.error("Failed to clean audit logs:", err.message);
     }

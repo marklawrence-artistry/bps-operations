@@ -127,9 +127,13 @@ const deleteSeller = async (req, res) => {
     try {
         const { id } = req.params;
 
-        // This query was failing because 'path' wasn't imported
+        // Get image path first
         const seller = await get(`SELECT image_path FROM seller WHERE id = ?`, [id]);
 
+        // Attempt DB Delete
+        await run(`DELETE FROM seller WHERE id = ?`, [id]);
+
+        // Only delete image if DB delete was successful (Foreign Key check passed)
         if (seller && seller.image_path) {
             const filename = seller.image_path.split('/').pop();
             const uploadDir = process.env.RAILWAY_VOLUME_MOUNT_PATH 
@@ -142,11 +146,18 @@ const deleteSeller = async (req, res) => {
             }
         }
 
-        await run(`DELETE FROM seller WHERE id = ?`, [id]);
         await logAudit(req.user.id, 'DELETE', 'seller', id, `Deleted seller ID: ${id}`, req.ip);
         getIO().emit('seller_update');
         res.status(200).json({ success: true, data: "Seller deleted." });
+
     } catch (err) {
+        // IMPROVED ERROR HANDLING
+        if (err.message.includes('FOREIGN KEY constraint failed')) {
+             return res.status(409).json({ 
+                 success: false, 
+                 data: "Cannot delete this Seller. They are linked to existing Returned (RTS) records. Please delete those records first." 
+             });
+        }
         res.status(500).json({ success: false, data: `Error: ${err.message}` });
     }
 };
