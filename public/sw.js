@@ -1,5 +1,5 @@
-const CACHE_NAME = 'bps-static-v1';
-const DATA_CACHE_NAME = 'bps-data-v1';
+const CACHE_NAME = 'bps-static-v2';
+const DATA_CACHE_NAME = 'bps-data-v2';
 
 const ASSETS_TO_CACHE = [
     '/',
@@ -22,10 +22,9 @@ const ASSETS_TO_CACHE = [
 ];
 
 self.addEventListener('install', (event) => {
-    self.skipWaiting();
+    self.skipWaiting(); // Force the new worker to take over immediately
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
-            console.log('[Service Worker] Caching static assets');
             return cache.addAll(ASSETS_TO_CACHE);
         })
     );
@@ -37,14 +36,13 @@ self.addEventListener('activate', (event) => {
             return Promise.all(
                 cacheNames.map((cacheName) => {
                     if (cacheName !== CACHE_NAME && cacheName !== DATA_CACHE_NAME) {
-                        console.log('[Service Worker] Deleting old cache:', cacheName);
                         return caches.delete(cacheName);
                     }
                 })
             );
         })
     );
-    self.clients.claim();
+    self.clients.claim(); // Take control of all pages immediately
 });
 
 self.addEventListener('fetch', (event) => {
@@ -52,31 +50,28 @@ self.addEventListener('fetch', (event) => {
 
     const url = new URL(event.request.url);
 
-    // 1. API DATA: Network First -> Cache Fallback
-    if (url.pathname.includes('/api/')) {
-        event.respondWith(
-            caches.open(DATA_CACHE_NAME).then(async (cache) => {
-                try {
-                    const networkResponse = await fetch(event.request);
-                    // Only cache successful responses
-                    if (networkResponse.status === 200) {
-                        cache.put(event.request, networkResponse.clone());
-                    }
-                    return networkResponse;
-                } catch (error) {
-                    const cachedResponse = await cache.match(event.request);
-                    if (cachedResponse) return cachedResponse;
-                    throw error;
-                }
-            })
-        );
+    // Bypass ping entirely
+    if (url.searchParams.has('ping')) {
+        event.respondWith(fetch(event.request));
         return;
     }
 
-    // 2. STATIC FILES: Cache First -> Network
+    // NETWORK FIRST STRATEGY (For both API and Static files)
     event.respondWith(
-        caches.match(event.request).then((response) => {
-            return response || fetch(event.request);
+        fetch(event.request).then((networkResponse) => {
+            // If the network request is successful, cache a fresh copy
+            if (networkResponse && networkResponse.status === 200) {
+                const cacheName = url.pathname.includes('/api/') ? DATA_CACHE_NAME : CACHE_NAME;
+                caches.open(cacheName).then((cache) => {
+                    cache.put(event.request, networkResponse.clone());
+                });
+            }
+            return networkResponse;
+        }).catch(async () => {
+            // ONLY fallback to cache if the network COMPLETELY fails (Offline)
+            const cachedResponse = await caches.match(event.request);
+            if (cachedResponse) return cachedResponse;
+            throw new Error("Network offline and no cache available.");
         })
     );
 });

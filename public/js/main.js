@@ -7,33 +7,28 @@ const ConnectivityManager = {
     offlineToast: null,
 
     init() {
-        // 1. Create Container
         if (!document.querySelector('.toast-container')) {
             const container = document.createElement('div');
             container.className = 'toast-container';
             document.body.appendChild(container);
         }
 
-        // 2. Browser Network Listeners (Wifi/Cable unplugged)
         window.addEventListener('online', () => this.handleOnline());
         window.addEventListener('offline', () => this.handleOffline());
 
-        // 3. Expose to global window so api.js can call it
         window.ConnectivityManager = this;
 
-        // 4. Start checking server status immediately
+        // FIX 2: Trigger an immediate ping on load/refresh
+        this.pingServer();
         this.startConnectionCheck();
     },
 
     showToast(message, type) {
         const container = document.querySelector('.toast-container');
-        
-        // Prevent duplicate offline toasts
         if (type === 'offline' && this.offlineToast) return;
 
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
-        
         const icon = type === 'online' ? '⚡' : '⚠️';
         
         toast.innerHTML = `
@@ -55,34 +50,79 @@ const ConnectivityManager = {
         }
     },
 
-    // Runs constantly to check connectivity
+    // Extracted ping logic to separate function
+    async pingServer() {
+        try {
+            let token = localStorage.getItem('token');
+            let headers = { 'Cache-Control': 'no-cache' };
+            
+            // Send token if we have it to prevent 403s
+            if (token) {
+                token = token.replace(/^"|"$/g, '');
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
+            const res = await fetch(`/api/auth/me?ping=${Date.now()}`, { 
+                method: 'GET', 
+                headers: headers
+            });
+
+            if (res.status >= 200 && res.status < 500) {
+                if (this.isOffline) this.handleOnline();
+            } else {
+                if (this.isOffline) this.handleOnline();
+            }
+        } catch (err) {
+            if (!this.isOffline) this.handleOffline();
+        }
+    },
+
+    // Update 2: Automatically wipe Data Cache when internet returns
+    async handleOnline() {
+        if (!this.isOffline) return;
+        this.isOffline = false;
+
+        console.log("Server detected back online.");
+
+        // === WIPE THE CACHE SO TABLES GET FRESH DATA ===
+        if ('caches' in window) {
+            try {
+                await caches.delete('bps-data-v2');
+                console.log("Wiped offline cache to force fresh data.");
+            } catch(e) { console.warn("Cache wipe failed", e); }
+        }
+        
+        if (this.offlineToast) {
+            this.offlineToast.classList.remove('show');
+            this.offlineToast.classList.add('hide');
+            setTimeout(() => {
+                if (this.offlineToast) this.offlineToast.remove();
+                this.offlineToast = null;
+            }, 300);
+        }
+        
+        this.showToast("Connection restored! Syncing...", "online");
+        document.body.classList.remove('is-offline');
+
+        if (!currentAccount && localStorage.getItem('token') && !window.location.pathname.endsWith('index.html')) {
+            await checkSession();
+        }
+
+        // Process Offline Outbox
+        await this.syncOutbox();
+
+        // Refresh all tables
+        await this.refreshActivePage();
+        
+        if (typeof io !== 'undefined' && window.socket) {
+            window.socket.connect();
+        }
+    },
+
     startConnectionCheck() {
         if (this.checkInterval) clearInterval(this.checkInterval);
-
-        // Ping every 5 seconds
-        this.checkInterval = setInterval(async () => {
-            try {
-                // We use a lightweight fetch (OPTIONS or HEAD is faster, but GET is safest for this API)
-                // We use '/api/auth/me' because it's a fast read
-                const res = await fetch('/api/auth/me', { 
-                    method: 'GET', 
-                    cache: 'no-store', // Important: Bypass Service Worker Cache
-                    headers: { 'Content-Type': 'application/json' } 
-                });
-
-                // If we get a response (even 401/403), the server is UP
-                if (res.status >= 200 && res.status < 500) {
-                    if (this.isOffline) this.handleOnline();
-                } else {
-                    // 500 errors usually mean server is up but broken, but connection refused means down
-                    // For this purpose, we assume if it fetches, it's "Online" enough
-                    if (this.isOffline) this.handleOnline();
-                }
-            } catch (err) {
-                // Fetch failed (Network Error / Connection Refused) -> Server is DOWN
-                if (!this.isOffline) this.handleOffline();
-            }
-        }, 5000); // Check every 5 seconds
+        // Ping every 3 seconds for faster detection
+        this.checkInterval = setInterval(() => this.pingServer(), 3000); 
     },
 
     handleOffline() {
@@ -92,8 +132,6 @@ const ConnectivityManager = {
         console.log("System detected server outage.");
         this.showToast("Server unreachable. Retrying...", "offline");
         document.body.classList.add('is-offline');
-        
-        // We keep the interval running; it will detect when it comes back online
     },
 
     async handleOnline() {
@@ -102,31 +140,63 @@ const ConnectivityManager = {
 
         console.log("Server detected back online.");
         
-        // Remove Offline Toast
         if (this.offlineToast) {
             this.offlineToast.classList.remove('show');
             this.offlineToast.classList.add('hide');
-            setTimeout(() => this.offlineToast.remove(), 300);
-            this.offlineToast = null;
+            setTimeout(() => {
+                if (this.offlineToast) this.offlineToast.remove();
+                this.offlineToast = null;
+            }, 300);
         }
         
-        this.showToast("Connection restored! Syncing...", "online");
+        this.showToast("Connection restored! Refresh! CTRL + R", "online");
         document.body.classList.remove('is-offline');
 
-        // Refresh Data
+        if (!currentAccount && localStorage.getItem('token') && !window.location.pathname.endsWith('index.html')) {
+            await checkSession();
+        }
+
+        // === PROCESS OFFLINE OUTBOX ===
+        await this.syncOutbox();
+
         await this.refreshActivePage();
         
-        // Reconnect Socket
         if (typeof io !== 'undefined' && window.socket) {
             window.socket.connect();
         }
+    },
+
+    // NEW FUNCTION INSIDE ConnectivityManager
+    async syncOutbox() {
+        const outbox = JSON.parse(localStorage.getItem('bps_outbox')) || [];
+        if (outbox.length === 0) return;
+
+        this.showToast(`Syncing ${outbox.length} offline actions...`, "online");
+
+        for (let task of outbox) {
+            try {
+                await fetch(task.url, {
+                    method: task.method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': task.token
+                    },
+                    body: task.body
+                });
+            } catch (err) {
+                console.error("Failed to sync an offline task:", task, err);
+            }
+        }
+        
+        // Clear outbox after syncing
+        localStorage.removeItem('bps_outbox');
+        this.showToast("Offline data synced to server!", "online");
     },
 
     async refreshActivePage() {
         const token = JSON.parse(localStorage.getItem('token'));
         if(!token) return;
 
-        // Refresh logic per page
         if (document.querySelector('#inventory-list')) {
              loadPaginatedData(api.getAllInventory, render.renderInventoryTable, document.querySelector('#inventory-list'), document.querySelector('.pagination'), 'inventoryPage', 'inventorySearch');
         }
@@ -307,7 +377,6 @@ async function checkSession() {
         const result = await api.checkSession(token);
         currentAccount = result.user;
         
-        // Update Header Info
         const userHeader = document.querySelector('.user-info');
         if (userHeader) {
             userHeader.innerHTML = `<h4>${currentAccount.username}</h4><p>${currentAccount.role_id === 1 ? 'Admin' : 'Staff'}</p>`;
@@ -315,9 +384,20 @@ async function checkSession() {
 
         applyRoleBasedUI();
     } catch (err) {
+        // DO NOT log out if it's just an offline network error!
+        if (err.message && err.message.includes("Server unreachable")) {
+            console.warn("Offline Mode: Retaining session. UI will update when reconnected.");
+            const userHeader = document.querySelector('.user-info');
+            if (userHeader) {
+                userHeader.innerHTML = `<h4>Offline Mode</h4><p>Waiting for connection...</p>`;
+            }
+            return; // Stop execution here, keeping the token safe
+        }
+
+        // If it's a real Auth error (401/403)
         console.warn("Session check failed:", err.message);
         localStorage.removeItem('token');
-        if (!window.location.pathname.endsWith('index.html')) {
+        if (!window.location.pathname.endsWith('index.html') && window.location.pathname !== '/') {
             location.href = 'index.html';
         }
     }
@@ -1811,6 +1891,40 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                 });
             }
+
+            function startSystemTimers() {
+                const elEmail = document.getElementById('timer-email');
+                const elAudit = document.getElementById('timer-audit');
+                if (!elEmail || !elAudit) return;
+
+                setInterval(() => {
+                    const now = new Date();
+
+                    // 1. Calculate next 8:00 AM (Email Alert)
+                    let next8AM = new Date();
+                    next8AM.setHours(8, 0, 0, 0);
+                    if (now > next8AM) next8AM.setDate(next8AM.getDate() + 1); // If past 8am, set to tomorrow
+
+                    // 2. Calculate next 12:00 AM (Midnight / Audit Cleanup)
+                    let nextMidnight = new Date();
+                    nextMidnight.setHours(24, 0, 0, 0); // Tonight at midnight
+
+                    // Formatting function
+                    const formatTimeDiff = (target) => {
+                        const diff = target - now;
+                        const h = Math.floor((diff / (1000 * 60 * 60)) % 24).toString().padStart(2, '0');
+                        const m = Math.floor((diff / 1000 / 60) % 60).toString().padStart(2, '0');
+                        const s = Math.floor((diff / 1000) % 60).toString().padStart(2, '0');
+                        return `${h}:${m}:${s}`;
+                    };
+
+                    elEmail.innerText = formatTimeDiff(next8AM);
+                    elAudit.innerText = formatTimeDiff(nextMidnight);
+                }, 1000);
+            }
+            
+            // Start the timers immediately
+            startSystemTimers();
         } catch(err) {
             console.error("Dashboard Error:", err);
         }
