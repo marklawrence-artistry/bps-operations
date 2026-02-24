@@ -1,6 +1,162 @@
 import * as api from './api.js';
 import * as render from './render.js';
 
+const ConnectivityManager = {
+    isOffline: false,
+    checkInterval: null,
+    offlineToast: null,
+
+    init() {
+        // 1. Create Container
+        if (!document.querySelector('.toast-container')) {
+            const container = document.createElement('div');
+            container.className = 'toast-container';
+            document.body.appendChild(container);
+        }
+
+        // 2. Browser Network Listeners (Wifi/Cable unplugged)
+        window.addEventListener('online', () => this.handleOnline());
+        window.addEventListener('offline', () => this.handleOffline());
+
+        // 3. Expose to global window so api.js can call it
+        window.ConnectivityManager = this;
+
+        // 4. Start checking server status immediately
+        this.startConnectionCheck();
+    },
+
+    showToast(message, type) {
+        const container = document.querySelector('.toast-container');
+        
+        // Prevent duplicate offline toasts
+        if (type === 'offline' && this.offlineToast) return;
+
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        
+        const icon = type === 'online' ? '⚡' : '⚠️';
+        
+        toast.innerHTML = `
+            <span class="toast-icon">${icon}</span>
+            <span>${message}</span>
+        `;
+        
+        container.appendChild(toast);
+        requestAnimationFrame(() => toast.classList.add('show'));
+
+        if (type === 'online') {
+            setTimeout(() => {
+                toast.classList.remove('show');
+                toast.classList.add('hide');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        } else {
+            this.offlineToast = toast;
+        }
+    },
+
+    // Runs constantly to check connectivity
+    startConnectionCheck() {
+        if (this.checkInterval) clearInterval(this.checkInterval);
+
+        // Ping every 5 seconds
+        this.checkInterval = setInterval(async () => {
+            try {
+                // We use a lightweight fetch (OPTIONS or HEAD is faster, but GET is safest for this API)
+                // We use '/api/auth/me' because it's a fast read
+                const res = await fetch('/api/auth/me', { 
+                    method: 'GET', 
+                    cache: 'no-store', // Important: Bypass Service Worker Cache
+                    headers: { 'Content-Type': 'application/json' } 
+                });
+
+                // If we get a response (even 401/403), the server is UP
+                if (res.status >= 200 && res.status < 500) {
+                    if (this.isOffline) this.handleOnline();
+                } else {
+                    // 500 errors usually mean server is up but broken, but connection refused means down
+                    // For this purpose, we assume if it fetches, it's "Online" enough
+                    if (this.isOffline) this.handleOnline();
+                }
+            } catch (err) {
+                // Fetch failed (Network Error / Connection Refused) -> Server is DOWN
+                if (!this.isOffline) this.handleOffline();
+            }
+        }, 5000); // Check every 5 seconds
+    },
+
+    handleOffline() {
+        if (this.isOffline) return; 
+        this.isOffline = true;
+        
+        console.log("System detected server outage.");
+        this.showToast("Server unreachable. Retrying...", "offline");
+        document.body.classList.add('is-offline');
+        
+        // We keep the interval running; it will detect when it comes back online
+    },
+
+    async handleOnline() {
+        if (!this.isOffline) return;
+        this.isOffline = false;
+
+        console.log("Server detected back online.");
+        
+        // Remove Offline Toast
+        if (this.offlineToast) {
+            this.offlineToast.classList.remove('show');
+            this.offlineToast.classList.add('hide');
+            setTimeout(() => this.offlineToast.remove(), 300);
+            this.offlineToast = null;
+        }
+        
+        this.showToast("Connection restored! Syncing...", "online");
+        document.body.classList.remove('is-offline');
+
+        // Refresh Data
+        await this.refreshActivePage();
+        
+        // Reconnect Socket
+        if (typeof io !== 'undefined' && window.socket) {
+            window.socket.connect();
+        }
+    },
+
+    async refreshActivePage() {
+        const token = JSON.parse(localStorage.getItem('token'));
+        if(!token) return;
+
+        // Refresh logic per page
+        if (document.querySelector('#inventory-list')) {
+             loadPaginatedData(api.getAllInventory, render.renderInventoryTable, document.querySelector('#inventory-list'), document.querySelector('.pagination'), 'inventoryPage', 'inventorySearch');
+        }
+        if (document.querySelector('#seller-list')) {
+             loadPaginatedData(api.getAllSellers, render.renderSellersTable, document.querySelector('#seller-list'), document.querySelector('.pagination'), 'sellerPage');
+        }
+        if (document.querySelector('#rts-list')) {
+             loadPaginatedData(api.getAllRTS, render.renderRTSTable, document.querySelector('#rts-list'), document.querySelector('.pagination'), 'rtsPage');
+        }
+        if (document.querySelector('#sales-list')) {
+             loadPaginatedData(api.getAllSales, render.renderSalesTable, document.querySelector('#sales-list'), document.querySelector('.pagination'), 'salesPage');
+        }
+        if (document.querySelector('#document-list')) {
+             loadPaginatedData(api.getAllDocuments, render.renderDocumentsTable, document.querySelector('#document-list'), document.querySelector('.pagination'), 'documentPage');
+        }
+        if (document.querySelector('.overview-grid')) {
+            try {
+                const stats = await api.getDashboardStats(token);
+                if(document.getElementById('stat-low-stock')) document.getElementById('stat-low-stock').innerText = stats.lowStockCount;
+                if(document.getElementById('stat-sales')) document.getElementById('stat-sales').innerText = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', notation: "compact" }).format(stats.salesMonthTotal);
+                if(document.getElementById('stat-sellers')) document.getElementById('stat-sellers').innerText = stats.sellerCount;
+            } catch(e) {}
+        }
+    }
+};
+
+// Initialize immediately
+ConnectivityManager.init();
+
+
 window.alert = function(message) {
     return new Promise((resolve) => {
         let modal = document.getElementById('custom-alert-modal');
@@ -235,59 +391,67 @@ document.addEventListener('DOMContentLoaded', async () => {
             .catch(err => console.log('Service Worker Registration Failed:', err));
     }
 
-    const socket = io();
-    // 1. Inventory Listener
-    if (document.querySelector('#inventory-list')) {
-        socket.on('inventory_update', () => {
-            // Re-fetch data using current filters
-            loadPaginatedData(api.getAllInventory, render.renderInventoryTable, document.querySelector('#inventory-list'), document.querySelector('.pagination'), 'inventoryPage', 'inventorySearch', 'inventoryCategory', 'inventorySort');
-            
-            // Optional: Dashboard Widget update
-            if(document.querySelector('.dashboard-table')) {
-                 api.getLowStockItems(JSON.parse(localStorage.getItem('token')))
-                    .then(data => render.renderLowStockWidget(data, document.querySelector('.dashboard-table')));
-            }
-        });
+    let socket;
+    if (typeof io !== 'undefined') {
+        socket = io();
+        window.socket = socket; // Save for reconnection logic
+        
+        // 1. Inventory Listener
+        if (document.querySelector('#inventory-list')) {
+            socket.on('inventory_update', () => {
+                loadPaginatedData(api.getAllInventory, render.renderInventoryTable, document.querySelector('#inventory-list'), document.querySelector('.pagination'), 'inventoryPage', 'inventorySearch', 'inventoryCategory', 'inventorySort');
+                if(document.querySelector('.dashboard-table')) {
+                     api.getLowStockItems(JSON.parse(localStorage.getItem('token')))
+                        .then(data => render.renderLowStockWidget(data, document.querySelector('.dashboard-table')));
+                }
+            });
+        }
+        
+        // 2. Dashboard Listener (Stats)
+        if (document.querySelector('.overview-grid')) {
+            const updateDashboard = async () => {
+                const token = JSON.parse(localStorage.getItem('token'));
+                const stats = await api.getDashboardStats(token);
+                // ... (Copy the logic from your existing Dashboard section to update numbers here)
+                // Or simpler: just reload the page if you want to be lazy: location.reload();
+                // But updating text is cooler:
+                document.getElementById('stat-low-stock').innerText = stats.lowStockCount;
+                document.getElementById('stat-sales').innerText = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', notation: "compact" }).format(stats.salesMonthTotal);
+                document.getElementById('stat-sellers').innerText = stats.sellerCount;
+            };
+
+            socket.on('inventory_update', updateDashboard);
+            socket.on('sales_update', updateDashboard);
+            socket.on('seller_update', updateDashboard);
+        }
+
+        // 3. Sales Listener
+        if (document.querySelector('#sales-list')) {
+            socket.on('sales_update', () => {
+                loadPaginatedData(api.getAllSales, render.renderSalesTable, document.querySelector('#sales-list'), document.querySelector('.pagination'), 'salesPage', 'salesSearch', 'salesSort');
+            });
+        }
+
+        // 4. Sellers Listener
+        if (document.querySelector('#seller-list')) {
+            socket.on('seller_update', () => {
+                loadPaginatedData(api.getAllSellers, render.renderSellersTable, document.querySelector('#seller-list'), document.querySelector('.pagination'), 'sellerPage', 'sellerSearch', 'sellerCategory');
+            });
+        }
+        
+        // 5. RTS Listener
+        if (document.querySelector('#rts-list')) {
+            socket.on('rts_update', () => {
+                loadPaginatedData(api.getAllRTS, render.renderRTSTable, document.querySelector('#rts-list'), document.querySelector('.pagination'), 'rtsPage', 'rtsSearch', 'rtsStatus', 'rtsSort');
+            });
+        }
+    } else {
+        console.warn("Socket.io library not loaded. Server might be offline.");
     }
 
-    // 2. Dashboard Listener (Stats)
-    if (document.querySelector('.overview-grid')) {
-        const updateDashboard = async () => {
-            const token = JSON.parse(localStorage.getItem('token'));
-            const stats = await api.getDashboardStats(token);
-            // ... (Copy the logic from your existing Dashboard section to update numbers here)
-            // Or simpler: just reload the page if you want to be lazy: location.reload();
-            // But updating text is cooler:
-            document.getElementById('stat-low-stock').innerText = stats.lowStockCount;
-            document.getElementById('stat-sales').innerText = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', notation: "compact" }).format(stats.salesMonthTotal);
-            document.getElementById('stat-sellers').innerText = stats.sellerCount;
-        };
-
-        socket.on('inventory_update', updateDashboard);
-        socket.on('sales_update', updateDashboard);
-        socket.on('seller_update', updateDashboard);
-    }
-
-    // 3. Sales Listener
-    if (document.querySelector('#sales-list')) {
-        socket.on('sales_update', () => {
-            loadPaginatedData(api.getAllSales, render.renderSalesTable, document.querySelector('#sales-list'), document.querySelector('.pagination'), 'salesPage', 'salesSearch', 'salesSort');
-        });
-    }
-
-    // 4. Sellers Listener
-    if (document.querySelector('#seller-list')) {
-        socket.on('seller_update', () => {
-            loadPaginatedData(api.getAllSellers, render.renderSellersTable, document.querySelector('#seller-list'), document.querySelector('.pagination'), 'sellerPage', 'sellerSearch', 'sellerCategory');
-        });
-    }
     
-    // 5. RTS Listener
-    if (document.querySelector('#rts-list')) {
-        socket.on('rts_update', () => {
-            loadPaginatedData(api.getAllRTS, render.renderRTSTable, document.querySelector('#rts-list'), document.querySelector('.pagination'), 'rtsPage', 'rtsSearch', 'rtsStatus', 'rtsSort');
-        });
-    }
+
+    
     
     // 1. SESSION CHECK (Skip on login page)
     if (!window.location.pathname.endsWith('index.html')) {

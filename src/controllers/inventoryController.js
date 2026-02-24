@@ -37,6 +37,13 @@ const deleteInventoryCategory = async (req, res) => {
         await logAudit(req.user.id, 'DELETE', 'inventory_categories', id, `Deleted category ID: ${id}`, req.ip);
         res.status(200).json({ success: true, data: "Category deleted." });
     } catch (err) {
+        // IMPROVED ERROR HANDLING
+        if (err.message.includes('FOREIGN KEY constraint failed')) {
+            return res.status(409).json({ 
+                success: false, 
+                data: "Cannot delete this Category. There are Inventory items assigned to it. Please reassign or delete the items first." 
+            });
+        }
         res.status(500).json({ success: false, data: `Error: ${err.message}` });
     }
 };
