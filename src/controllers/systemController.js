@@ -63,6 +63,24 @@ const createBackup = async (req, res) => {
 };
 
 // --- SYSTEM HEALTH ---
+const getFolderSize = (dirPath) => {
+    let totalSize = 0;
+    if (fs.existsSync(dirPath)) {
+        const files = fs.readdirSync(dirPath);
+        for (const file of files) {
+            const fullPath = path.join(dirPath, file);
+            const stats = fs.statSync(fullPath);
+            if (stats.isDirectory()) {
+                totalSize += getFolderSize(fullPath);
+            } else {
+                totalSize += stats.size;
+            }
+        }
+    }
+    return totalSize;
+};
+
+// --- SYSTEM HEALTH ---
 const getSystemHealth = async (req, res) => {
     try {
         // 1. Server Uptime
@@ -71,12 +89,14 @@ const getSystemHealth = async (req, res) => {
         const minutes = Math.floor((uptimeSeconds % 3600) / 60);
         const uptimeFormatted = `${hours}h ${minutes}m`;
 
-        // 2. Database Size
-        let dbSizeMB = "0.00";
+        // 2. Database + Uploads Size
+        let totalBytes = 0;
         if (fs.existsSync(DB_PATH)) {
-            const stats = fs.statSync(DB_PATH);
-            dbSizeMB = (stats.size / (1024 * 1024)).toFixed(2);
+            totalBytes += fs.statSync(DB_PATH).size;
         }
+        totalBytes += getFolderSize(UPLOADS_PATH);
+        
+        const totalSizeMB = (totalBytes / (1024 * 1024)).toFixed(2);
 
         // 3. Last Backup
         const backupDir = process.env.RAILWAY_VOLUME_MOUNT_PATH 
@@ -98,7 +118,7 @@ const getSystemHealth = async (req, res) => {
 
         res.status(200).json({
             success: true,
-            data: { uptime: uptimeFormatted, dbSize: dbSizeMB, lastBackup: lastBackupDate }
+            data: { uptime: uptimeFormatted, dbSize: totalSizeMB, lastBackup: lastBackupDate }
         });
     } catch(err) {
         res.status(500).json({ success: false, data: err.message });

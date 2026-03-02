@@ -286,6 +286,21 @@ window.customConfirm = function(message) {
     });
 };
 
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        const alertModal = document.getElementById('custom-alert-modal');
+        const confirmModal = document.getElementById('custom-confirm-modal');
+        
+        if (alertModal && alertModal.style.display === 'flex') {
+            e.preventDefault();
+            document.getElementById('custom-alert-btn').click();
+        } else if (confirmModal && confirmModal.style.display === 'flex') {
+            e.preventDefault();
+            document.getElementById('custom-confirm-yes').click();
+        }
+    }
+});
+
 let currentAccount = null;
 
 // Global State for Pagination

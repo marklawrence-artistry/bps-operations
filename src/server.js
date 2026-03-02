@@ -31,6 +31,38 @@ const systemRoutes = require('./routes/systemRoutes');
 const app = express();
 const PORT = process.env.port || 3000;
 
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+
+// Limits each IP to 500 requests per 10 minutes for general routes
+const globalLimiter = rateLimit({
+    windowMs: 10 * 60 * 1000, 
+    max: 500, 
+    message: { success: false, data: "Too many requests from this IP, please try again later." },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+app.use(globalLimiter);
+
+// 2. Helmet & Content Security Policy (Anti-XSS)
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"], // Allows Chart.js
+            styleSrc: ["'self'", "'unsafe-inline'"], // Allows inline styles used in your JS
+            imgSrc: ["'self'", "data:", "blob:"], // Allows local uploads and blob downloads
+            connectSrc: ["'self'", "ws:", "wss:"], // Allows Socket.io connections
+        }
+    }
+}));
+
+// 3. Permissions Policy Header
+app.use((req, res, next) => {
+    res.setHeader("Permissions-Policy", "geolocation=(), microphone=(), camera=()");
+    next();
+});
+
 // 2. CREATE HTTP SERVER
 const server = http.createServer(app);
 
