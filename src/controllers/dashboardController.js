@@ -30,15 +30,16 @@ const getDashboardStats = async (req, res) => {
             GROUP BY month
             ORDER BY month ASC
         `, [sixMonthsAgoStr]);
-
-        // Format data for Chart.js
+        
         const labels = chartRawData.map(item => {
             const [y, m] = item.month.split('-');
             const d = new Date(y, m - 1);
             return d.toLocaleString('default', { month: 'short', year: 'numeric' });
         });
         const data = chartRawData.map(item => item.total);
+        
         const grandTotal = data.reduce((a, b) => a + b, 0);
+        const averageMonthlySales = data.length > 0 ? (grandTotal / data.length) : 0;
 
         res.status(200).json({
             success: true,
@@ -46,7 +47,7 @@ const getDashboardStats = async (req, res) => {
                 lowStockCount: lowStock.count || 0,
                 salesMonthTotal: salesThisMonth.total || 0,
                 sellerCount: sellers.count || 0,
-                chart: { labels, data, grandTotal }
+                chart: { labels, data, grandTotal: averageMonthlySales }
             }
         });
 
@@ -55,7 +56,6 @@ const getDashboardStats = async (req, res) => {
     }
 };
 
-// Widget: Top 5 items low in stock (No pagination needed for dashboard widget)
 const getLowStockItems = async (req, res) => {
     try {
         const items = await all(`

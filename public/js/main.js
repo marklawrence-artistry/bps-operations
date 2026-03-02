@@ -792,9 +792,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                     accountForm.querySelector('#account-email').value = acc.email;
                     accountForm.querySelector('#account-role').value = acc.role_id;
                     accountForm.querySelector('#account-password').value = "";
-                    accountForm.querySelector('#account-question').value = acc.security_question || "";
-                    accountForm.querySelector('#account-answer').value = "";
                     
+                    // --- NEW: Disable Role if editing self ---
+                    const roleSelect = accountForm.querySelector('#account-role');
+                    if (Number(id) === Number(currentAccount.id)) {
+                        roleSelect.disabled = true;
+                        roleSelect.title = "You cannot change your own role.";
+                    } else {
+                        roleSelect.disabled = false;
+                        roleSelect.title = "";
+                    }
+
                     document.querySelector('#form-title').innerText = "Update Account";
                     accountForm.style.display = "block";
                     document.querySelector('#cancel-account-btn').style.display = "block";
@@ -831,6 +839,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             createAccountBtn.addEventListener('click', () => {
                 accountForm.reset();
                 accountForm.querySelector('#account-id').value = "";
+                
+                // --- NEW: Re-enable role select for new accounts ---
+                const roleSelect = accountForm.querySelector('#account-role');
+                if(roleSelect) roleSelect.disabled = false;
+
                 document.querySelector('#form-title').innerText = "Create New Account";
                 accountForm.style.display = "block";
                 cancelAccountBtn.style.display = "block";
@@ -849,9 +862,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     username: accountForm.querySelector('#account-username').value.trim() || null,
                     email: accountForm.querySelector('#account-email').value.trim() || null,
                     role_id: accountForm.querySelector('#account-role').value || null,
-                    password: accountForm.querySelector('#account-password').value.trim() || null,
-                    security_question: accountForm.querySelector('#account-question').value || null,
-                    security_answer: accountForm.querySelector('#account-answer').value.trim() || null
+                    password: accountForm.querySelector('#account-password').value.trim() || null
+                    // Removed security_question & security_answer
                 };
                 const id = accountForm.querySelector('#account-id').value;
                 const token = JSON.parse(localStorage.getItem('token'));
@@ -1656,6 +1668,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
+    const saleStartDate = document.querySelector('#sale-start-date');
+    const saleEndDate = document.querySelector('#sale-end-date');
+    if (saleStartDate && saleEndDate) {
+        saleStartDate.addEventListener('change', (e) => {
+            if (e.target.value) {
+                const date = new Date(e.target.value);
+                date.setDate(date.getDate() + 6); // Add 6 days to start date
+                saleEndDate.value = date.toISOString().split('T')[0];
+            }
+        });
+    }
+
     // ============================================================
     // MODULE: DOCUMENTS
     // ============================================================
@@ -1717,11 +1741,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             if(e.target.classList.contains('real-edit-btn') || e.target.classList.contains('edit-btn')) {
                 const docForm = document.querySelector('#document-form');
                 
-                // Get data from table cells (Order: Title, Category, Expiry)
+                // --- FIX: Shifted array indexes by +1 to account for the checkbox column ---
                 const cells = row.querySelectorAll('td');
-                const currentTitle = cells[0].innerText;
-                const currentCategory = cells[1].innerText;
-                const currentExpiry = cells[2].innerText;
+                const currentTitle = cells[1].textContent.trim();
+                const currentCategory = cells[2].textContent.trim();
+                const currentExpiry = cells[3].textContent.trim();
 
                 // Populate Form
                 docForm.querySelector('#document-id').value = id;

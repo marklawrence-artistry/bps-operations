@@ -93,6 +93,16 @@ export function renderAccountsTable(data, container) {
     if (!data || data.length === 0) {
         renderEmptyState(tbody, 6, "No accounts found.");
     } else {
+        // Safe token parsing
+        let currentUserId = null;
+        try {
+            const tokenStr = localStorage.getItem('token');
+            if(tokenStr) {
+                const payload = JSON.parse(atob(tokenStr.replace(/^"|"$/g, '').split('.')[1]));
+                currentUserId = Number(payload.id);
+            }
+        } catch(e) {}
+
         data.forEach(element => {
             const row = document.createElement('tr');
             row.dataset.id = element.id;
@@ -102,21 +112,37 @@ export function renderAccountsTable(data, container) {
                 ? '<span class="status-badge active">Active</span>' 
                 : '<span class="status-badge critical">Disabled</span>';
             
-            const toggleBtn = element.is_active === 1 
-                ? `<button class='btn disable-btn'>Disable</button>` 
-                : `<button class='btn enable-btn'>Enable</button>`;
+            const isSelf = Number(element.id) === currentUserId;
+
+            // --- FIX: Completely remove checkbox if it's the admin's own account ---
+            const checkboxHtml = isSelf 
+                ? `<span style="display:inline-block; width:20px;"></span>` // Empty space placeholder
+                : `<input type="checkbox" class="row-select" value="${element.id}">`;
+
+            // --- FIX: Only show edit for self ---
+            let actionButtons = '';
+            if (isSelf) {
+                actionButtons = `<button class='btn edit-btn'>Edit</button>`;
+            } else {
+                const toggleBtn = element.is_active === 1 
+                    ? `<button class='btn disable-btn'>Disable</button>` 
+                    : `<button class='btn enable-btn'>Enable</button>`;
+                actionButtons = `
+                    <button class='btn edit-btn'>Edit</button>
+                    <button class='btn delete-btn'>Delete</button>
+                    ${toggleBtn}
+                `;
+            }
 
             row.innerHTML = `
-                <td><input type="checkbox" class="row-select" value="${element.id}"></td>
+                <td>${checkboxHtml}</td>
                 <td><strong>${element.username}</strong></td>
                 <td>${element.email}</td>
                 <td>${roleVal}</td>
                 <td>${statusBadge}</td>
                 <td>
                     <div class="action-buttons">
-                        <button class='btn edit-btn'>Edit</button>
-                        <button class='btn delete-btn'>Delete</button>
-                        ${toggleBtn}
+                        ${actionButtons}
                     </div>
                 </td>
             `;
@@ -188,31 +214,52 @@ export function renderInventoryTable(data, container) {
     const tbody = table.querySelector('tbody');
 
     if (!data || data.length === 0) {
-        renderEmptyState(tbody, 8, "No inventory items found.");
+        renderEmptyState(tbody, 6, "No accounts found.");
     } else {
+        // --- NEW: Safely get current user ID from token ---
+        let currentUserId = null;
+        try {
+            const tokenStr = localStorage.getItem('token');
+            if(tokenStr) {
+                const payload = JSON.parse(atob(tokenStr.replace(/^"|"$/g, '').split('.')[1]));
+                currentUserId = payload.id;
+            }
+        } catch(e) {}
+
         data.forEach(element => {
             const row = document.createElement('tr');
             row.dataset.id = element.id;
             
-            const imgDisplay = element.image_url 
-                ? `<img src="${element.image_url}" style="width:40px; height:40px; object-fit:cover; border-radius:4px;">` 
-                : `<span style="color:#ccc; font-size:0.8rem;">No Img</span>`;
+            const roleVal = element.role_id === 1 ? 'Admin' : 'Staff';
+            const statusBadge = element.is_active === 1 
+                ? '<span class="status-badge active">Active</span>' 
+                : '<span class="status-badge critical">Disabled</span>';
+            
+            const toggleBtn = element.is_active === 1 
+                ? `<button class='btn disable-btn'>Disable</button>` 
+                : `<button class='btn enable-btn'>Enable</button>`;
 
-            const statusClass = element.quantity <= element.min_stock_level ? 'critical' : 'active';
-            const statusText = element.quantity <= element.min_stock_level ? 'Low Stock' : 'Good';
+            // --- UPDATED: Hide delete/disable for self ---
+            let actionButtons = '';
+            if (element.id === currentUserId) {
+                actionButtons = `<button class='btn edit-btn'>Edit (Self)</button>`;
+            } else {
+                actionButtons = `
+                    <button class='btn edit-btn'>Edit</button>
+                    <button class='btn delete-btn'>Delete</button>
+                    ${toggleBtn}
+                `;
+            }
 
             row.innerHTML = `
                 <td><input type="checkbox" class="row-select" value="${element.id}"></td>
-                <td>${imgDisplay}</td>
-                <td><strong>${element.name}</strong></td>
-                <td>${element.category_name || 'Uncategorized'}</td>
-                <td>${element.quantity}</td>
-                <td>${element.min_stock_level}</td>
-                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                <td><strong>${element.username}</strong></td>
+                <td>${element.email}</td>
+                <td>${roleVal}</td>
+                <td>${statusBadge}</td>
                 <td>
                     <div class="action-buttons">
-                        <button class='btn edit-btn'>Edit</button>
-                        <button class='btn delete-btn'>Delete</button>
+                        ${actionButtons}
                     </div>
                 </td>
             `;

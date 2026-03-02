@@ -136,24 +136,20 @@ const createUser = async (req, res) => {
 const updateUser = async (req, res) => {
     try {
         const { id } = req.params;
-        let { username, password, email, role_id, is_active, security_question, security_answer } = req.body;
+        let { username, password, email, role_id, is_active } = req.body; // Removed security question fields
 
-        // Prepare Password Hash
+        // --- SECURE: Prevent changing own role ---
+        if (Number(id) === req.user.id && role_id !== undefined && Number(role_id) !== req.user.role_id) {
+            return res.status(403).json({ success: false, data: "Security Policy: You cannot change your own role." });
+        }
+
         let passwordHash = null;
         if (password) {
             const salt = await bcrypt.genSalt(10);
             passwordHash = await bcrypt.hash(password, salt);
         }
 
-        // Prepare Answer Hash
-        let answerHash = null;
-        if (security_answer) {
-            const salt = await bcrypt.genSalt(10);
-            answerHash = await bcrypt.hash(security_answer, salt);
-        }
-
-        // We use COALESCE in SQL, but since we are constructing a dynamic update, simpler SQL is better here
-        // However, to keep it consistent with previous style:
+        // Removed security_question and security_answer_hash from this update 
         await run(`
             UPDATE users
             SET
@@ -161,11 +157,9 @@ const updateUser = async (req, res) => {
                 password_hash = COALESCE(?, password_hash),
                 email = COALESCE(?, email),
                 role_id = COALESCE(?, role_id),
-                is_active = COALESCE(?, is_active),
-                security_question = COALESCE(?, security_question),
-                security_answer_hash = COALESCE(?, security_answer_hash)
+                is_active = COALESCE(?, is_active)
             WHERE id = ?
-        `, [username, passwordHash, email, role_id, is_active, security_question, answerHash, id]);
+        `, [username, passwordHash, email, role_id, is_active, id]);
 
         await logAudit(req.user.id, 'UPDATE', 'users', id, `Updated user ID:${id}`, req.ip);
         getIO().emit('account_update');
@@ -181,6 +175,12 @@ const updateUser = async (req, res) => {
 const deleteUser = async (req, res) => {
     try {
         const { id } = req.params;
+        
+        // --- SECURE: Prevent self-deletion ---
+        if (Number(id) === req.user.id) {
+            return res.status(403).json({ success: false, data: "Security Policy: You cannot delete your own account." });
+        }
+
         await run(`DELETE FROM users WHERE id = ?`, [id]);
         await logAudit(req.user.id, 'DELETE', 'users', id, `Deleted user ID: ${id}`, req.ip);
         getIO().emit('account_update');
@@ -204,6 +204,12 @@ const getUser = async (req, res) => {
 const disableUser = async (req, res) => {
     try {
         const { id } = req.params;
+
+        // --- SECURE: Prevent self-disable ---
+        if (Number(id) === req.user.id) {
+            return res.status(403).json({ success: false, data: "Security Policy: You cannot disable your own account." });
+        }
+
         await run(`UPDATE users SET is_active = 0 WHERE id = ?`, [id]);
         await logAudit(req.user.id, 'UPDATE', 'users', id, `Disabled user ID: ${id}`, req.ip);
         res.status(200).json({ success: true, data: "User disabled successfully!" });
