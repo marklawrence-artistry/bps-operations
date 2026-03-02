@@ -56,22 +56,28 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // NETWORK FIRST STRATEGY (For both API and Static files)
+    // NETWORK FIRST STRATEGY
     event.respondWith(
         fetch(event.request).then((networkResponse) => {
-            // If the network request is successful, cache a fresh copy
-            if (networkResponse && networkResponse.status === 200) {
+            // FIX: Only cache valid, standard responses, and clone IMMEDIATELY
+            if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+                const responseToCache = networkResponse.clone(); 
+                
                 const cacheName = url.pathname.includes('/api/') ? DATA_CACHE_NAME : CACHE_NAME;
                 caches.open(cacheName).then((cache) => {
-                    cache.put(event.request, networkResponse.clone());
-                });
+                    // Add silent catch to prevent ANY console errors from showing up
+                    cache.put(event.request, responseToCache).catch(() => {});
+                }).catch(() => {});
             }
             return networkResponse;
         }).catch(async () => {
             // ONLY fallback to cache if the network COMPLETELY fails (Offline)
             const cachedResponse = await caches.match(event.request);
             if (cachedResponse) return cachedResponse;
-            throw new Error("Network offline and no cache available.");
+            // Silent failure for offline edge-cases
+            return new Response(JSON.stringify({ success: false, data: "Offline" }), {
+                status: 503, headers: { 'Content-Type': 'application/json' }
+            });
         })
     );
 });
