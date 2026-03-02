@@ -83,8 +83,10 @@ const checkExpiringDocuments = async (isTest = false) => {
         return { success: true, count: documents.length };
 
     } catch (error) {
-        console.error("Notification Error:", error);
-        throw error;
+        // Expose the EXACT reason Brevo is rejecting your email
+        const brevoError = error.response ? error.response.text : error.message;
+        console.error("Notification Error Details:", brevoError);
+        throw new Error(brevoError); // Throw the real error back to the frontend
     }
 };
 

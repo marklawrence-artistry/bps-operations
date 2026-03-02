@@ -92,13 +92,15 @@ const deleteDocument = async (req, res) => {
         // 1. Delete the physical file (Keep this logic)
         const doc = await get(`SELECT file_path FROM documents WHERE id = ?`, [id]);
         if (doc && doc.file_path) {
-            // ... (keep your existing file deletion code here) ...
-            const filename = doc.file_path.split('/').pop();
-            const uploadDir = process.env.RAILWAY_VOLUME_MOUNT_PATH 
-                ? path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH, 'uploads')
-                : path.join(__dirname, '../../public/uploads');
-            const filePath = path.join(uploadDir, filename);
-            if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+            if (doc && typeof doc.file_path === 'string') {
+                const filename = doc.file_path.split('/').pop();
+                const uploadDir = process.env.RAILWAY_VOLUME_MOUNT_PATH 
+                    ? path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH, 'uploads')
+                    : path.join(__dirname, '../../public/uploads');
+                const filePath = path.join(uploadDir, filename);
+                if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+            }
+            
         }
 
         // 2. *** FIX IS HERE: SWAP THESE TWO LINES ***
