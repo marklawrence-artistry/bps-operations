@@ -56,6 +56,7 @@ const initDB = () => {
     const db = getDB();
     db.serialize(() => {
         db.run('PRAGMA foreign_keys = ON;');
+        db.run('PRAGMA journal_mode = WAL;');
         
         // 1. Roles
         db.run(`CREATE TABLE IF NOT EXISTS roles (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL UNIQUE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
