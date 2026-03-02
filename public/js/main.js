@@ -944,6 +944,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         inventoryListDiv.addEventListener('click', async (e) => {
             const row = e.target.closest('tr');
             if(!row) return;
+
+            const isInteractiveElem = e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.tagName === 'A' || e.target.closest('.action-buttons');
+            if (!isInteractiveElem) {
+                const editBtn = row.querySelector('.edit-btn');
+                if (editBtn) editBtn.click();
+                return;
+            }
+
             const id = row.dataset.id;
             const token = JSON.parse(localStorage.getItem('token'));
 
@@ -957,7 +965,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const inventoryForm = document.querySelector('#inventory-form');
                 const item = await api.getInventory(id, token);
                 
-                // --- NEW: POPULATE DROPDOWN BEFORE SETTING VALUE ---
                 try {
                     const catRes = await api.getAllInventoryCategories(token, 1, true);
                     const select = inventoryForm.querySelector('#inventory-category');
@@ -976,9 +983,21 @@ document.addEventListener('DOMContentLoaded', async () => {
                 inventoryForm.querySelector('#inventory-quantity').value = item.quantity;
                 inventoryForm.querySelector('#inventory-minstock').value = item.min_stock_level;
                 
-                // Show form
+                // --- NEW: Show Image Preview ---
+                const imgPreview = inventoryForm.querySelector('.inventory-image-preview');
+                if (imgPreview) {
+                    if (item.image_url) {
+                        imgPreview.src = item.image_url;
+                        imgPreview.style.display = 'block';
+                    } else {
+                        imgPreview.style.display = 'none';
+                    }
+                }
+                
+                document.querySelector('#form-title').innerText = "Edit Inventory Item";
                 inventoryForm.style.display = "block";
                 document.querySelector('#cancel-inventory-btn').style.display = "block";
+                inventoryForm.scrollIntoView({ behavior: 'smooth' }); // Scroll down to form
             }
         });
 
@@ -1183,10 +1202,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             }, 500));
         }
 
-        // --- NEW: Event Listener for Edit/Delete ---
         sellerListDiv.addEventListener('click', async (e) => {
             const row = e.target.closest('tr');
             if (!row) return;
+
+            const isInteractiveElem = e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.tagName === 'A' || e.target.closest('.action-buttons');
+            if (!isInteractiveElem) {
+                const editBtn = row.querySelector('.edit-btn');
+                if (editBtn) editBtn.click();
+                return;
+            }
 
             const id = row.dataset.id;
             const token = JSON.parse(localStorage.getItem('token'));
@@ -1721,6 +1746,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             const row = e.target.closest('tr');
             if(!row) return;
             
+            const isInteractiveElem = e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.tagName === 'A' || e.target.closest('.action-buttons');
+            if (!isInteractiveElem) {
+                const editBtn = row.querySelector('.real-edit-btn') || row.querySelector('.edit-btn');
+                if (editBtn) editBtn.click();
+                return;
+            }
+
             const id = row.dataset.id;
             const token = JSON.parse(localStorage.getItem('token'));
 
@@ -2004,6 +2036,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         startInput.value = firstDay;
         endInput.value = lastDay;
+
+        endInput.min = startInput.value; // Set initial min
+        startInput.addEventListener('change', () => {
+            if (startInput.value) {
+                endInput.min = startInput.value;
+                if (endInput.value && endInput.value < startInput.value) {
+                    endInput.value = startInput.value;
+                }
+            } else {
+                endInput.removeAttribute('min');
+            }
+        });
 
         // Helper to fetch and render
         const refreshPreview = async () => {

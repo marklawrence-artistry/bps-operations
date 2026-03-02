@@ -3,43 +3,33 @@ async function request(url, options = {}) {
     try {
         const response = await fetch(url, options);
         if (!response.ok) {
-            // Throw so it goes to catch block if it's a server error
             const errText = await response.text();
-            throw new Error(errText);
+            let errorMessage = "An error occurred.";
+            try {
+                // Safely try to extract backend message
+                const errJson = JSON.parse(errText);
+                errorMessage = errJson.data || errJson.message || errorMessage;
+            } catch (e) {
+                // If it's HTML (like 502 Bad Gateway), grab the first 50 chars
+                errorMessage = "Server error: " + errText.substring(0, 50);
+            }
+            throw new Error(errorMessage); // Throw clean error
         }
         return response;
     } catch (err) {
         // DETECT OFFLINE OR SERVER DOWN
         if (!navigator.onLine || err.message === 'Failed to fetch' || err.message.includes('unreachable')) {
-            
             if (window.ConnectivityManager) window.ConnectivityManager.handleOffline();
 
-            // === OFFLINE OUTBOX LOGIC ===
-            // If it's a Data Modification (Create, Update, Delete)
+            // OFFLINE OUTBOX LOGIC
             if (options.method && options.method !== 'GET') {
-                
-                // Note: We cannot easily save image files (FormData) to localStorage.
-                if (options.body instanceof FormData) {
-                    throw new Error("File uploads are disabled while offline.");
-                }
-
-                // Save to localStorage Outbox
+                if (options.body instanceof FormData) throw new Error("File uploads are disabled while offline.");
                 const outbox = JSON.parse(localStorage.getItem('bps_outbox')) || [];
-                outbox.push({
-                    url: url,
-                    method: options.method,
-                    body: options.body, // already stringified JSON
-                    token: options.headers?.Authorization
-                });
+                outbox.push({ url, method: options.method, body: options.body, token: options.headers?.Authorization });
                 localStorage.setItem('bps_outbox', JSON.stringify(outbox));
-
-                // Return a FAKE successful response so the UI closes the form and says "Created!"
-                return {
-                    json: async () => ({ success: true, data: "Saved offline. Will sync when connection is restored." })
-                };
+                return { json: async () => ({ success: true, data: "Saved offline. Will sync when connection is restored." }) };
             }
         }
-        
         throw new Error(err.message || "Server unreachable. Please check your connection.");
     }
 }

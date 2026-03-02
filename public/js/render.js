@@ -214,52 +214,31 @@ export function renderInventoryTable(data, container) {
     const tbody = table.querySelector('tbody');
 
     if (!data || data.length === 0) {
-        renderEmptyState(tbody, 6, "No accounts found.");
+        renderEmptyState(tbody, 8, "No inventory items found.");
     } else {
-        // --- NEW: Safely get current user ID from token ---
-        let currentUserId = null;
-        try {
-            const tokenStr = localStorage.getItem('token');
-            if(tokenStr) {
-                const payload = JSON.parse(atob(tokenStr.replace(/^"|"$/g, '').split('.')[1]));
-                currentUserId = payload.id;
-            }
-        } catch(e) {}
-
         data.forEach(element => {
             const row = document.createElement('tr');
             row.dataset.id = element.id;
             
-            const roleVal = element.role_id === 1 ? 'Admin' : 'Staff';
-            const statusBadge = element.is_active === 1 
-                ? '<span class="status-badge active">Active</span>' 
-                : '<span class="status-badge critical">Disabled</span>';
-            
-            const toggleBtn = element.is_active === 1 
-                ? `<button class='btn disable-btn'>Disable</button>` 
-                : `<button class='btn enable-btn'>Enable</button>`;
+            const imgDisplay = element.image_url 
+                ? `<img src="${element.image_url}" style="width:40px; height:40px; object-fit:cover; border-radius:4px;">` 
+                : `<span style="color:#ccc; font-size:0.8rem;">No Img</span>`;
 
-            // --- UPDATED: Hide delete/disable for self ---
-            let actionButtons = '';
-            if (element.id === currentUserId) {
-                actionButtons = `<button class='btn edit-btn'>Edit (Self)</button>`;
-            } else {
-                actionButtons = `
-                    <button class='btn edit-btn'>Edit</button>
-                    <button class='btn delete-btn'>Delete</button>
-                    ${toggleBtn}
-                `;
-            }
+            const statusClass = element.quantity <= element.min_stock_level ? 'critical' : 'active';
+            const statusText = element.quantity <= element.min_stock_level ? 'Low Stock' : 'Good';
 
             row.innerHTML = `
                 <td><input type="checkbox" class="row-select" value="${element.id}"></td>
-                <td><strong>${element.username}</strong></td>
-                <td>${element.email}</td>
-                <td>${roleVal}</td>
-                <td>${statusBadge}</td>
+                <td>${imgDisplay}</td>
+                <td><strong>${element.name}</strong></td>
+                <td>${element.category_name || 'Uncategorized'}</td>
+                <td>${element.quantity}</td>
+                <td>${element.min_stock_level}</td>
+                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
                 <td>
                     <div class="action-buttons">
-                        ${actionButtons}
+                        <button class='btn edit-btn'>Edit</button>
+                        <button class='btn delete-btn'>Delete</button>
                     </div>
                 </td>
             `;
@@ -512,7 +491,10 @@ export function renderAuditLogTable(data, container) {
     } else {
         data.forEach(element => {
             const row = document.createElement('tr');
-            const dateObj = new Date(element.created_at);
+            
+            // --- FIX: Append 'Z' to force JS to recognize it as UTC, automatically converting to Local Time ---
+            const dateStringRaw = element.created_at.replace(' ', 'T') + 'Z';
+            const dateObj = new Date(dateStringRaw);
             const dateString = dateObj.toLocaleDateString() + ' ' + dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
 
             let badgeClass = 'low';
