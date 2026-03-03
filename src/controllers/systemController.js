@@ -2,17 +2,27 @@ const fs = require('fs');
 const path = require('path');
 const archiver = require('archiver');
 const AdmZip = require('adm-zip');
-// Import reloadDB and getDB
-const { getDB, reloadDB, checkAndApplyMigrations } = require('../database');
+const { getDB, reloadDB, checkAndApplyMigrations } = require('../database'); 
 const { get, run, all } = require('../utils/db-async');
 const { encryptBuffer } = require('../utils/crypto');
 
 const DB_NAME = "bps.db";
+
+// --- FIX: DYNAMIC PATH DEFINITIONS ---
+// 1. Define where the Database lives
 const DB_PATH = process.env.RAILWAY_VOLUME_MOUNT_PATH 
     ? path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH, DB_NAME) 
     : path.resolve(__dirname, '../../', DB_NAME);
 
-const UPLOADS_PATH = path.join(__dirname, '../../public/uploads');
+// 2. Define where Uploads live
+const UPLOADS_PATH = process.env.RAILWAY_VOLUME_MOUNT_PATH 
+    ? path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH, 'uploads') 
+    : path.join(__dirname, '../../public/uploads');
+
+// 3. Define where Backups are saved
+const BACKUP_DIR = process.env.RAILWAY_VOLUME_MOUNT_PATH 
+    ? path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH, 'backups') 
+    : path.join(__dirname, '../../backups');
 
 const getSettings = async (req, res) => {
     try {
@@ -35,26 +45,23 @@ const createBackup = async (req, res) => {
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
         const filename = `bps_backup_${timestamp}.zip`;
         
-        // Ensure backups directory exists
-        const backupDir = process.env.RAILWAY_VOLUME_MOUNT_PATH 
-            ? path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH, 'backups') 
-            : path.join(__dirname, '../../backups');
-            
-        if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true });
+        if (!fs.existsSync(BACKUP_DIR)) fs.mkdirSync(BACKUP_DIR, { recursive: true });
         
-        const filePath = path.join(backupDir, filename);
+        const filePath = path.join(BACKUP_DIR, filename);
         const output = fs.createWriteStream(filePath);
         const archive = archiver('zip', { zlib: { level: 9 } });
 
         output.on('close', () => {
-            // Send the saved file to the user
             res.download(filePath, filename);
         });
 
         archive.on('error', (err) => res.status(500).send({error: err.message}));
         archive.pipe(output);
 
+        // Add Database File
         if (fs.existsSync(DB_PATH)) archive.file(DB_PATH, { name: DB_NAME });
+        
+        // Add Uploads Folder (Now points to the correct Volume path)
         if (fs.existsSync(UPLOADS_PATH)) archive.directory(UPLOADS_PATH, 'uploads');
 
         await archive.finalize();
@@ -81,7 +88,6 @@ const getFolderSize = (dirPath) => {
     return totalSize;
 };
 
-// --- SYSTEM HEALTH ---
 const getSystemHealth = async (req, res) => {
     try {
         // 1. Server Uptime
@@ -95,23 +101,20 @@ const getSystemHealth = async (req, res) => {
         if (fs.existsSync(DB_PATH)) {
             totalBytes += fs.statSync(DB_PATH).size;
         }
+        // Now this uses the correct Volume path on Railway
         totalBytes += getFolderSize(UPLOADS_PATH);
         
         const totalSizeMB = (totalBytes / (1024 * 1024)).toFixed(2);
 
         // 3. Last Backup
-        const backupDir = process.env.RAILWAY_VOLUME_MOUNT_PATH 
-            ? path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH, 'backups') 
-            : path.join(__dirname, '../../backups');
-            
         let lastBackupDate = "No backups yet";
         
-        if (fs.existsSync(backupDir)) {
-            const files = fs.readdirSync(backupDir).filter(f => f.endsWith('.zip'));
+        if (fs.existsSync(BACKUP_DIR)) {
+            const files = fs.readdirSync(BACKUP_DIR).filter(f => f.endsWith('.zip'));
             if (files.length > 0) {
                 const sortedFiles = files.map(f => ({
                     name: f,
-                    time: fs.statSync(path.join(backupDir, f)).mtime.getTime()
+                    time: fs.statSync(path.join(BACKUP_DIR, f)).mtime.getTime()
                 })).sort((a, b) => b.time - a.time);
                 lastBackupDate = new Date(sortedFiles[0].time).toLocaleString();
             }
@@ -138,10 +141,14 @@ const restoreBackup = async (req, res) => {
         // 1. Restore Images
         zipEntries.forEach(entry => {
             if (entry.entryName.startsWith('uploads/') && !entry.isDirectory) {
-                const fullPath = path.join(__dirname, '../../public/', entry.entryName);
-                const dir = path.dirname(fullPath);
+                // Determine destination based on Volume vs Local
+                const destPath = process.env.RAILWAY_VOLUME_MOUNT_PATH 
+                    ? path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH, entry.entryName)
+                    : path.join(__dirname, '../../public/', entry.entryName);
+
+                const dir = path.dirname(destPath);
                 if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-                fs.writeFileSync(fullPath, entry.getData());
+                fs.writeFileSync(destPath, entry.getData());
             }
         });
 
@@ -157,14 +164,10 @@ const restoreBackup = async (req, res) => {
                 }
 
                 try {
-                    // B. Overwrite the file
                     fs.writeFileSync(DB_PATH, dbEntry.getData());
                     console.log("DB File Overwritten.");
 
-                    // C. Re-open the connection
                     await reloadDB();
-                    
-                    // --- CRITICAL FIX: RE-APPLY MIGRATIONS TO THE OLD DB ---
                     checkAndApplyMigrations(); 
                     console.log("Migrations applied to restored database.");
 
@@ -192,39 +195,36 @@ const restoreBackup = async (req, res) => {
 
 const encryptLegacyDocuments = async (req, res) => {
     try {
-        // 1. Get all documents from DB
         const documents = await all(`SELECT file_path FROM documents`);
         let successCount = 0;
         let failCount = 0;
 
         for (const doc of documents) {
             const filename = doc.file_path.split('/').pop();
-            const filePath = path.join(UPLOADS_PATH, filename);
+            const filePath = path.join(UPLOADS_PATH, filename); // Uses correct path now
 
             if (fs.existsSync(filePath)) {
                 const buffer = fs.readFileSync(filePath);
                 
-                // Very basic check: If it starts with standard file signatures, it's NOT encrypted yet
-                // PDF = %PDF (25 50 44 46), PNG = \x89PNG (89 50 4E 47), JPG = FF D8
                 const isUnencrypted = 
-                    buffer.includes(Buffer.from('25504446', 'hex')) || // PDF
-                    buffer.includes(Buffer.from('89504e47', 'hex')) || // PNG
-                    buffer.includes(Buffer.from('ffd8ffe0', 'hex')) || // JPG
-                    buffer.includes(Buffer.from('ffd8ffe1', 'hex'));   // JPG alt
+                    buffer.includes(Buffer.from('25504446', 'hex')) || 
+                    buffer.includes(Buffer.from('89504e47', 'hex')) || 
+                    buffer.includes(Buffer.from('ffd8ffe0', 'hex')) || 
+                    buffer.includes(Buffer.from('ffd8ffe1', 'hex'));
 
                 if (isUnencrypted) {
                     const encryptedBuffer = encryptBuffer(buffer);
                     fs.writeFileSync(filePath, encryptedBuffer);
                     successCount++;
                 } else {
-                    failCount++; // Probably already encrypted
+                    failCount++; 
                 }
             }
         }
 
         res.status(200).json({ 
             success: true, 
-            data: `Migration Complete. Encrypted ${successCount} legacy files. Skipped ${failCount} files (likely already encrypted).` 
+            data: `Migration Complete. Encrypted ${successCount} legacy files. Skipped ${failCount} files.` 
         });
     } catch (error) {
         console.error("Encryption Migration Error:", error);
@@ -232,5 +232,4 @@ const encryptLegacyDocuments = async (req, res) => {
     }
 };
 
-// Update your exports at the bottom!
 module.exports = { createBackup, getSystemHealth, restoreBackup, getSettings, updateSettings, encryptLegacyDocuments };
