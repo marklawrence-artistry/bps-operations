@@ -49,10 +49,10 @@ app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"], // Allows Chart.js
-            styleSrc: ["'self'", "'unsafe-inline'"], // Allows inline styles used in your JS
-            imgSrc: ["'self'", "data:", "blob:"], // Allows local uploads and blob downloads
-            connectSrc: ["'self'", "ws:", "wss:"], // Allows Socket.io connections
+            scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"], 
+            styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"], // <-- ADDED CDN HERE
+            imgSrc: ["'self'", "data:", "blob:"], 
+            connectSrc: ["'self'", "ws:", "wss:", "https://cdn.jsdelivr.net"], // <-- ADDED CDN HERE (Fixes the Chart.js error in your console too)
         }
     }
 }));

@@ -196,6 +196,7 @@ const createInventory = async (req, res) => {
 const deleteInventory = async (req, res) => {
     try {
         const { id } = req.params;
+        const reason = req.body.reason || "No reason provided";
         
         // 1. Get the image URL before deleting
         const item = await get(`SELECT image_url FROM inventory WHERE id = ?`, [id]);
@@ -217,7 +218,7 @@ const deleteInventory = async (req, res) => {
         }
 
         await run(`DELETE FROM inventory WHERE id = ?`, [id]);
-        await logAudit(req.user.id, 'DELETE', 'inventory', id, `Deleted item ID: ${id}`, req.ip);
+        await logAudit(req.user.id, 'DELETE', 'inventory', id, `Deleted item ID: ${id} Reason: ${reason}`, req.ip);
         getIO().emit('inventory_update');
 
         res.status(200).json({ success: true, data: "Item deleted." });

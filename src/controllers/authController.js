@@ -4,27 +4,67 @@ const logAudit = require('../utils/audit-logger');
 const { all, get, run } = require('../utils/db-async');
 const { getIO } = require('../utils/socket');
 
+const loginAttempts = {}; 
+
 const login = async (req, res) => {
     try {
         const { email, password } = req.body;
+        const ip = req.ip;
 
         if (!email || !password) {
             return res.status(400).json({ success: false, data: "Email and password are required." });
         }
 
-        const user = await get("SELECT * FROM users WHERE email = ?", [email]);
-        if (!user) {
-            return res.status(401).json({ success: false, data: "Invalid email or password." });
+        // 1. Check if IP is currently locked out
+        if (!loginAttempts[ip]) loginAttempts[ip] = { count: 0, lockUntil: 0, multiplier: 1 };
+        const attempt = loginAttempts[ip];
+
+        if (Date.now() < attempt.lockUntil) {
+            const remainingSecs = Math.ceil((attempt.lockUntil - Date.now()) / 1000);
+            return res.status(429).json({ 
+                success: false, 
+                data: `Too many attempts. Locked for ${remainingSecs} seconds.` 
+            });
         }
 
+        const user = await get("SELECT * FROM users WHERE email = ?", [email]);
+        
+        let isMatch = false;
+        if (user) {
+            isMatch = await bcrypt.compare(password, user.password_hash);
+        }
+
+        // 2. Handle Failed Login
+        if (!user || !isMatch) {
+            attempt.count += 1;
+            let attemptsLeft = 3 - attempt.count;
+
+            if (attempt.count >= 3) {
+                // Lock the account: 30s * multiplier (30s, then 60s, then 90s...)
+                const lockTime = 30 * attempt.multiplier * 1000;
+                attempt.lockUntil = Date.now() + lockTime;
+                attempt.multiplier += 1;
+                attempt.count = 0; // Reset count for the next batch of tries
+                
+                return res.status(429).json({ 
+                    success: false, 
+                    data: `Account locked for ${lockTime/1000} seconds due to multiple failed attempts.` 
+                });
+            } else {
+                return res.status(401).json({ 
+                    success: false, 
+                    data: `Invalid email or password. ${attemptsLeft} attempts left.` 
+                });
+            }
+        }
+
+        // 3. Handle Disabled Account
         if (user.is_active === 0) {
             return res.status(403).json({ success: false, data: "Account is disabled. Contact admin." });
         }
 
-        const isMatch = await bcrypt.compare(password, user.password_hash);
-        if (!isMatch) {
-            return res.status(401).json({ success: false, data: "Invalid email or password." });
-        }
+        // 4. Handle Successful Login
+        delete loginAttempts[ip]; // Reset tracker on success
 
         const token = jwt.sign(
             { id: user.id, username: user.username, email: user.email, role_id: user.role_id }, 
@@ -40,10 +80,7 @@ const login = async (req, res) => {
                 message: "Login successful",
                 token: token,
                 user: {
-                    id: user.id,
-                    username: user.username,
-                    email: user.email,
-                    role_id: user.role_id
+                    id: user.id, username: user.username, email: user.email, role_id: user.role_id
                 }
             }
         });
@@ -51,6 +88,32 @@ const login = async (req, res) => {
     } catch (error) {
         console.error("LOGIN ERROR: ", error);
         res.status(500).json({ success: false, data: `Internal Server Error: ${error.message}` });
+    }
+};
+
+const deleteUser = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { reason } = req.body; // --- NEW: Extract reason ---
+        
+        // Prevent self-deletion
+        if (Number(id) === req.user.id) {
+            return res.status(403).json({ success: false, data: "Security Policy: You cannot delete your own account." });
+        }
+
+        if (!reason) {
+            return res.status(400).json({ success: false, data: "A reason is required to delete a staff account." });
+        }
+
+        await run(`DELETE FROM users WHERE id = ?`, [id]);
+        
+        // --- NEW: Include reason in Audit Log ---
+        await logAudit(req.user.id, 'DELETE', 'users', id, `Deleted user ID: ${id}. Reason: ${reason}`, req.ip);
+        
+        getIO().emit('account_update');
+        res.status(200).json({ success: true, data: "User deleted successfully!" });
+    } catch (err) {
+        res.status(500).json({ success: false, data: `Error: ${err.message}` });
     }
 };
 
@@ -168,24 +231,6 @@ const updateUser = async (req, res) => {
         if (err.message.includes('UNIQUE constraint failed: inventory.username')) {
             return res.status(400).json({ success: false, data: "An item with this exact name already exists in the inventory." });
         }
-        res.status(500).json({ success: false, data: `Error: ${err.message}` });
-    }
-};
-
-const deleteUser = async (req, res) => {
-    try {
-        const { id } = req.params;
-        
-        // --- SECURE: Prevent self-deletion ---
-        if (Number(id) === req.user.id) {
-            return res.status(403).json({ success: false, data: "Security Policy: You cannot delete your own account." });
-        }
-
-        await run(`DELETE FROM users WHERE id = ?`, [id]);
-        await logAudit(req.user.id, 'DELETE', 'users', id, `Deleted user ID: ${id}`, req.ip);
-        getIO().emit('account_update');
-        res.status(200).json({ success: true, data: "User deleted successfully!" });
-    } catch (err) {
         res.status(500).json({ success: false, data: `Error: ${err.message}` });
     }
 };

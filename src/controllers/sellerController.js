@@ -126,6 +126,7 @@ const updateSeller = async (req, res) => {
 const deleteSeller = async (req, res) => {
     try {
         const { id } = req.params;
+        const reason = req.body.reason || "No reason provided";
 
         // Get image path first
         const seller = await get(`SELECT image_path FROM seller WHERE id = ?`, [id]);
@@ -146,7 +147,7 @@ const deleteSeller = async (req, res) => {
             }
         }
 
-        await logAudit(req.user.id, 'DELETE', 'seller', id, `Deleted seller ID: ${id}`, req.ip);
+        await logAudit(req.user.id, 'DELETE', 'seller', id, `Deleted seller ID: ${id}. Reason: ${reason}`, req.ip);
         getIO().emit('seller_update');
         res.status(200).json({ success: true, data: "Seller deleted." });
 

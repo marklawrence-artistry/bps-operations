@@ -1,3 +1,9 @@
+// --- NEW: DOMPurify Anti-XSS Helper ---
+const sanitize = (str) => {
+    if (typeof str !== 'string') return str;
+    return typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(str) : str;
+};
+
 // Global variable to track the chart instance so we can destroy it before re-rendering
 let reportChartInstance = null;
 
@@ -136,8 +142,8 @@ export function renderAccountsTable(data, container) {
 
             row.innerHTML = `
                 <td>${checkboxHtml}</td>
-                <td><strong>${element.username}</strong></td>
-                <td>${element.email}</td>
+                <td><strong>${sanitize(element.username)}</strong></td>
+                <td>${sanitize(element.email)}</td>
                 <td>${roleVal}</td>
                 <td>${statusBadge}</td>
                 <td>
@@ -176,8 +182,8 @@ export function renderInventoryCategoriesTable(data, container) {
             const row = document.createElement('tr');
             row.dataset.id = element.id;
             row.innerHTML = `
-                <td><strong>${element.name}</strong></td>
-                <td>${element.description}</td>
+                <td><strong>${sanitize(element.name)}</strong></td>
+                <td>${sanitize(element.description)}</td>
                 <td>
                     <div class="action-buttons">
                         <button class='btn edit-btn'>Edit</button>
@@ -230,10 +236,10 @@ export function renderInventoryTable(data, container) {
             row.innerHTML = `
                 <td><input type="checkbox" class="row-select" value="${element.id}"></td>
                 <td>${imgDisplay}</td>
-                <td><strong>${element.name}</strong></td>
-                <td>${element.category_name || 'Uncategorized'}</td>
-                <td>${element.quantity}</td>
-                <td>${element.min_stock_level}</td>
+                <td><strong>${sanitize(element.name)}</strong></td>
+                <td>${sanitize(element.category_name) || 'Uncategorized'}</td>
+                <td>${sanitize(element.quantity)}</td>
+                <td>${sanitize(element.min_stock_level)}</td>
                 <td><span class="status-badge ${statusClass}">${statusText}</span></td>
                 <td>
                     <div class="action-buttons">
@@ -283,13 +289,13 @@ export function renderSellersTable(data, container) {
             row.innerHTML = `
                 <td><input type="checkbox" class="row-select" value="${element.id}"></td>
                 <td>${imgDisplay}</td>
-                <td><strong>${element.name}</strong></td>
-                <td>${element.category}</td>
-                <td><span class="status-badge" style="background:#e0f2fe; color:#0369a1;">${element.platform_name}</span></td>
+                <td><strong>${sanitize(element.name)}</strong></td>
+                <td>${sanitize(element.category)}</td>
+                <td><span class="status-badge" style="background:#e0f2fe; color:#0369a1;">${sanitize(element.platform_name)}</span></td>
                 <td>
                     <div style="font-size: 0.85rem;">
-                        <div>📞 ${element.contact_num}</div>
-                        <div style="color: #6b7280;">✉️ ${element.email}</div>
+                        <div>📞 ${sanitize(element.contact_num)}</div>
+                        <div style="color: #6b7280;">✉️ ${sanitize(element.email)}</div>
                     </div>
                 </td>
                 <td>
@@ -337,13 +343,13 @@ export function renderRTSTable(data, container) {
 
             row.innerHTML = `
                 <td><input type="checkbox" class="row-select" value="${element.id}"></td>
-                <td><strong>${element.tracking_no}</strong></td>
-                <td>${element.seller_name || 'Unknown ID: ' + element.seller_id}</td>
+                <td><strong>${sanitize(element.tracking_no)}</strong></td>
+                <td>${sanitize(element.seller_name) || 'Unknown ID: ' + element.seller_id}</td>
                 <td>
-                    <div style="font-size: 0.9rem; font-weight: 600;">${element.product_name}</div>
-                    <div style="font-size: 0.8rem; color: #888;">${element.description || ''}</div>
+                    <div style="font-size: 0.9rem; font-weight: 600;">${sanitize(element.product_name)}</div>
+                    <div style="font-size: 0.8rem; color: #888;">${sanitize(element.description) || ''}</div>
                 </td>
-                <td>${element.customer_name}</td>
+                <td>${sanitize(element.customer_name)}</td>
                 <td><span class="status-badge ${statusColor}">${element.status}</span></td>
                 <td>
                     <div class="action-buttons">
@@ -392,9 +398,9 @@ export function renderSalesTable(data, container) {
 
             row.innerHTML = `
                 <td><input type="checkbox" class="row-select" value="${element.id}"></td>
-                <td>${element.week_start_date} to ${element.week_end_date}</td>
+                <td>${sanitize(element.week_start_date)} to ${sanitize(element.week_end_date)}</td>
                 <td><strong>${formattedAmount}</strong></td>
-                <td>${element.notes || 'N/A'}</td>
+                <td>${sanitize(element.notes) || 'N/A'}</td>
                 <td>
                     <div class="action-buttons">
                         <button class='btn edit-btn'>Edit</button>
@@ -448,9 +454,9 @@ export function renderDocumentsTable(data, container) {
 
             row.innerHTML = `
                 <td><input type="checkbox" class="row-select" value="${element.id}"></td>
-                <td><strong>${element.title}</strong></td>
-                <td>${element.category}</td>
-                <td>${element.expiry_date}</td>
+                <td><strong>${sanitize(element.title)}</strong></td>
+                <td>${sanitize(element.category)}</td>
+                <td>${sanitize(element.expiry_date)}</td>
                 <td>${statusBadge}</td>
                 <td>
                     <div class="action-buttons">
@@ -503,11 +509,11 @@ export function renderAuditLogTable(data, container) {
 
             row.innerHTML = `
                 <td style="font-size:0.85rem; color:#6b7280;">${dateString}</td>
-                <td><strong>${element.username || 'Unknown'}</strong></td>
+                <td><strong>${sanitize(element.username) || 'Unknown'}</strong></td>
                 <td><span class="status-badge ${badgeClass}">${element.action_type}</span></td>
-                <td>${element.table_name} <span style="font-size:0.8rem; color:#999;">(ID: ${element.record_id || '-'})</span></td>
-                <td>${element.description}</td>
-                <td style="font-family: monospace; font-size: 0.8rem;">${element.ip_address || '::1'}</td>
+                <td>${sanitize(element.table_name)} <span style="font-size:0.8rem; color:#999;">(ID: ${element.record_id || '-'})</span></td>
+                <td>${sanitize(element.description)}</td>
+                <td style="font-family: monospace; font-size: 0.8rem;">${sanitize(element.ip_address) || '::1'}</td>
             `;
             tbody.appendChild(row);
         });
@@ -529,9 +535,9 @@ export function renderLowStockWidget(data, container) {
             const statusText = item.quantity === 0 ? 'Out of Stock' : 'Low';
             
             row.innerHTML = `
-                <td>${item.name}</td>
-                <td>${item.category_name || 'N/A'}</td>
-                <td>${item.quantity}</td>
+                <td>${sanitize(item.name)}</td>
+                <td>${sanitize(item.category_name) || 'N/A'}</td>
+                <td>${sanitize(item.quantity)}</td>
                 <td><span class="status-badge ${statusClass}">${statusText}</span></td>
             `;
             tbody.appendChild(row);
