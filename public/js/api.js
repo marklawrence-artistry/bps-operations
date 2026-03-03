@@ -102,13 +102,14 @@ export async function updateAccount(data, token, id) {
 }
 
 // (AUTH) Delete Account
-export async function deleteAccount(id, token) {
+export async function deleteAccount(id, token, reason = "No reason provided") {
     const response = await request(`/api/auth/${id}`, {
         method: 'DELETE',
         headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
-        }
+        },
+        body: JSON.stringify({ reason }) // Send reason in the body
     });
     const result = await response.json();
     if(!result.success) throw new Error(result.data);
@@ -270,13 +271,14 @@ export async function createInventory(formData, token) {
     return result.data;
 }
 
-export async function deleteInventory(id, token) {
+export async function deleteInventory(id, token, reason = "No reason provided") {
     const response = await request(`/api/inventory/${id}`, {
         method: 'DELETE',
         headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json', // MUST add this line
             'Authorization': `Bearer ${token}`
-        }
+        },
+        body: JSON.stringify({ reason }) // MUST add this line
     });
     const result = await response.json();
     if(!result.success) throw new Error(result.data);
@@ -383,13 +385,14 @@ export async function updateSeller(id, formData, token) {
 }
 
 // (SELLER) Delete
-export async function deleteSeller(id, token) {
+export async function deleteSeller(id, token, reason = "No reason provided") {
     const response = await request(`/api/seller/${id}`, {
         method: 'DELETE',
         headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
-        }
+        },
+        body: JSON.stringify({ reason })
     });
     const result = await response.json();
     if(!result.success) throw new Error(result.data);

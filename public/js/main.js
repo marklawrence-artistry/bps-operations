@@ -461,11 +461,18 @@ function setupMultiDelete(listDivId, btnId, deleteApiCallback, refreshCallback) 
         const ids = getSelectedIds();
         if (ids.length === 0) return;
 
+        // --- NEW: Require Reason ---
+        const reason = prompt(`Please provide a reason for deleting these ${ids.length} items (Required):`);
+        if (!reason || reason.trim() === "") {
+            alert("Deletion cancelled: A reason is required for the Audit Log.");
+            return;
+        }
+
         if (await customConfirm(`Are you sure you want to delete ${ids.length} items? This cannot be undone.`)) {
             const token = JSON.parse(localStorage.getItem('token'));
             try {
-                // Execute deletes in parallel
-                await Promise.all(ids.map(id => deleteApiCallback(id, token)));
+                // Pass the reason to the API callback
+                await Promise.all(ids.map(id => deleteApiCallback(id, token, reason)));
                 
                 alert("Selected items deleted.");
                 bulkBtn.style.display = 'none';
@@ -479,6 +486,77 @@ function setupMultiDelete(listDivId, btnId, deleteApiCallback, refreshCallback) 
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+
+    if (typeof flatpickr !== 'undefined') {
+        
+        // 1. Documents Page
+        flatpickr('#document-expiry', {
+            dateFormat: "Y-m-d",
+            allowInput: true,
+            placeholder: "Select expiry date..." // Adds the placeholder
+        });
+
+        // 2. Reports Page (Linked Pickers to prevent invalid ranges)
+        const repStartInput = document.querySelector('#rep-start');
+        const repEndInput = document.querySelector('#rep-end');
+        if (repStartInput && repEndInput) {
+            const repEndPicker = flatpickr(repEndInput, {
+                dateFormat: "Y-m-d",
+                allowInput: true,
+                placeholder: "Select end date..."
+            });
+
+            flatpickr(repStartInput, {
+                dateFormat: "Y-m-d",
+                allowInput: true,
+                placeholder: "Select start date...",
+                onChange: function(selectedDates, dateStr) {
+                    if (selectedDates.length > 0) {
+                        repEndPicker.set('minDate', dateStr); // Prevent picking end date before start date
+                        
+                        // If current end date is before new start date, auto-adjust it
+                        if (repEndPicker.selectedDates.length > 0 && repEndPicker.selectedDates[0] < selectedDates[0]) {
+                            repEndPicker.setDate(dateStr);
+                        }
+                    } else {
+                        repEndPicker.set('minDate', null);
+                    }
+                }
+            });
+        }
+
+        // 3. Sales Page (Auto-add 6 days)
+        const saleEndDateInput = document.querySelector('#sale-end-date');
+        const saleStartDateInput = document.querySelector('#sale-start-date');
+        let saleEndPicker;
+        
+        if (saleEndDateInput) {
+            saleEndPicker = flatpickr(saleEndDateInput, {
+                dateFormat: "Y-m-d",
+                placeholder: "Auto-calculated...",
+                clickOpens: false, // Prevents user from clicking it since it's auto-calculated
+                disableMobile: true 
+            });
+            // Force readonly so user can't type in it
+            saleEndDateInput.setAttribute('readonly', 'readonly'); 
+        }
+
+        if (saleStartDateInput) {
+            flatpickr(saleStartDateInput, {
+                dateFormat: "Y-m-d",
+                allowInput: true,
+                placeholder: "Select start date...",
+                onChange: function(selectedDates, dateStr) {
+                    if (selectedDates.length > 0 && saleEndPicker) {
+                        const startDate = selectedDates[0];
+                        const endDate = new Date(startDate);
+                        endDate.setDate(startDate.getDate() + 6);
+                        saleEndPicker.setDate(endDate); 
+                    }
+                }
+            });
+        }
+    }
 
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js')
@@ -825,8 +903,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             // Delete
             if (e.target.classList.contains('delete-btn')) {
+                // --- NEW: Require Reason for Deletion ---
+                const reason = prompt("Please provide a reason for deleting this staff account (Required):");
+                if (reason === null || reason.trim() === "") {
+                    alert("Deletion cancelled: Reason is required for the Audit Log.");
+                    return;
+                }
+
                 if (await customConfirm("Delete this account?")) {
-                    await api.deleteAccount(id, token);
+                    await api.deleteAccount(id, token, reason);
                     loadPaginatedData(api.getAllAccounts, render.renderAccountsTable, accountListDiv, paginationDiv, 'accountPage');
                 }
             }
@@ -971,8 +1056,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             const token = JSON.parse(localStorage.getItem('token'));
 
             if(e.target.classList.contains('delete-btn')) {
-                if (await customConfirm("Delete item?")) {
-                    await api.deleteInventory(id, token);
+                // --- NEW: Require Reason ---
+                const reason = prompt("Please provide a reason for deletion (Required):");
+                if (!reason || reason.trim() === "") {
+                    alert("Deletion cancelled: A reason is required for the Audit Log.");
+                    return;
+                }
+
+                if (await customConfirm("Delete this item?")) {
+                    await api.deleteInventory(id, token, reason); // Pass reason here!
                     loadPaginatedData(api.getAllInventory, render.renderInventoryTable, inventoryListDiv, paginationDiv, 'inventoryPage');
                 }
             }
@@ -1233,9 +1325,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // DELETE ACTION
             if (e.target.classList.contains('delete-btn')) {
+                const reason = prompt("Please provide a reason for deletion (Required):");
+                if (!reason || reason.trim() === "") {
+                    alert("Deletion cancelled: A reason is required for the Audit Log.");
+                    return;
+                }
+
                 if (await customConfirm("Are you sure you want to delete this seller?")) {
                     try {
-                        await api.deleteSeller(id, token);
+                        await api.deleteSeller(id, token, reason);
                         alert("Seller deleted successfully.");
                         loadPaginatedData(api.getAllSellers, render.renderSellersTable, sellerListDiv, paginationDiv, 'sellerPage');
                     } catch (err) {
@@ -1708,18 +1806,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    const saleStartDate = document.querySelector('#sale-start-date');
-    const saleEndDate = document.querySelector('#sale-end-date');
-    if (saleStartDate && saleEndDate) {
-        saleStartDate.addEventListener('change', (e) => {
-            if (e.target.value) {
-                const date = new Date(e.target.value);
-                date.setDate(date.getDate() + 6); // Add 6 days to start date
-                saleEndDate.value = date.toISOString().split('T')[0];
-            }
-        });
-    }
-
     // ============================================================
     // MODULE: DOCUMENTS
     // ============================================================
@@ -2048,21 +2134,33 @@ document.addEventListener('DOMContentLoaded', async () => {
         const today = new Date();
         const firstDay = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
         const lastDay = today.toISOString().split('T')[0];
-        
-        startInput.value = firstDay;
-        endInput.value = lastDay;
 
-        endInput.min = startInput.value; // Set initial min
-        startInput.addEventListener('change', () => {
-            if (startInput.value) {
-                endInput.min = startInput.value;
-                if (endInput.value && endInput.value < startInput.value) {
-                    endInput.value = startInput.value;
+        // --- NEW: Tightly coupled Flatpickr setup for Reports ---
+        const endPicker = flatpickr(endInput, {
+            dateFormat: "Y-m-d",
+            defaultDate: lastDay,
+            allowInput: true
+        });
+
+        const startPicker = flatpickr(startInput, {
+            dateFormat: "Y-m-d",
+            defaultDate: firstDay,
+            allowInput: true,
+            onChange: function(selectedDates, dateStr) {
+                if (selectedDates.length > 0) {
+                    endPicker.set('minDate', dateStr); // Enforce the rule
+                    // Auto-correct end date if it violates the new rule
+                    if (endPicker.selectedDates.length > 0 && endPicker.selectedDates[0] < selectedDates[0]) {
+                        endPicker.setDate(dateStr);
+                    }
+                } else {
+                    endPicker.set('minDate', null);
                 }
-            } else {
-                endInput.removeAttribute('min');
             }
         });
+
+        // Trigger the rule immediately on page load!
+        endPicker.set('minDate', firstDay);
 
         // Helper to fetch and render
         const refreshPreview = async () => {
