@@ -9,56 +9,57 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
 </head>
 <body class="login-body">
-    <div class="login-container">
-        <!-- Left Side (Blue) -->
-        <div class="login-left">
-            <div class="login-left-content">
-                <img src="logo/Bicodo Postal Services Logo.png" alt="BPS Logo" class="login-logo-white"> 
-                <!-- Note: If you don't have a white version of the logo, we can hide it or use filter. 
-                     The mockup has the logo on the RIGHT side, so I will put it there. 
-                     The LEFT side has big text. -->
-                
-                <h1>BPS RECORDS<br>SYSTEM</h1>
-                <p>Log in to access the BPS system, built for<br>security and accountability.</p>
-            </div>
-        </div>
-
-        <!-- Right Side (White) -->
-        <div class="login-right">
-            <div class="login-form-wrapper">
-                <div class="brand-header">
-                    <img src="logo/Bicodo Postal Services Logo.png" alt="BPS Logo">
+    
+    <!-- Wrapper to center the card -->
+    <div class="login-page-wrapper">
+        
+        <div class="login-card">
+            <!-- Left Side (Gradient Blue) -->
+            <div class="login-left">
+                <div class="login-logo-container">
+                    <!-- White version of logo for dark background -->
+                    <img src="logo/Bicodo Postal Services Logo.png" alt="BPS Logo" class="login-logo-brand"> 
                 </div>
+                
+                <div class="login-left-text">
+                    <h1>Secure Access</h1>
+                    <p>Log in to your personal account to manage parcels, inventory, and track records efficiently.</p>
+                </div>
+            </div>
 
-                <h2>Welcome Back!</h2>
+            <!-- Right Side (Form) -->
+            <div class="login-right">
+                <div class="login-form-wrapper">
+                    <h2>Welcome Back</h2>
+                    <p class="login-subtext">Please enter your details to sign in.</p>
 
-                <form id="login-form">
-                    <div class="login-input-group">
-                        <label for="login-email">Email Address</label>
-                        <div class="input-with-icon">
-                            <img src="Icons/Log in Page/email_icon.png" alt="">
-                            <input type="email" id="login-email" placeholder="Enter your email" required>
+                    <form id="login-form">
+                        <div class="login-input-group">
+                            <label for="login-email">Email Address</label>
+                            <input type="email" id="login-email" placeholder="name@company.com" required>
                         </div>
-                    </div>
 
-                    <div class="login-input-group">
-                        <label for="login-password">Password</label>
-                        <div class="input-with-icon">
-                            <img src="Icons/Log in Page/password_icon.png" alt="">
-                            <input type="password" id="login-password" placeholder="Enter your password" required>
+                        <div class="login-input-group">
+                            <label for="login-password">Password</label>
+                            <div class="password-wrapper">
+                                <input type="password" id="login-password" placeholder="••••••••" required>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="login-options">
-                        <a href="#">Forgot password?</a>
-                    </div>
+                        <button type="submit" class="login-btn">Log in</button>
 
-                    <button type="submit" class="login-btn">Log in</button>
-                </form>
+                        <div class="login-options">
+                            <span class="divider-text">or continue with</span>
+                            <a href="#" id="forgot-password-link">Forgot password?</a>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
+
     </div>
 
+    <!-- Forgot Password Modal (Kept functionality) -->
     <div id="forgot-password-modal" class="modal">
         <div class="modal-content" style="max-width: 400px;">
             <div class="modal-header">
@@ -92,5 +93,28 @@
     </div>
 
     <script src="js/main.js" type="module"></script>
+    <script>
+        // Inline script to wire up the new forgot password link ID
+        document.addEventListener('DOMContentLoaded', () => {
+            const fpLink = document.getElementById('forgot-password-link');
+            const fpModal = document.getElementById('forgot-password-modal');
+            const closeBtn = document.getElementById('close-fp-modal');
+            const step1 = document.getElementById('fp-step-1');
+            const step2 = document.getElementById('fp-step-2');
+
+            if(fpLink && fpModal) {
+                fpLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    fpModal.style.display = 'flex';
+                    step1.style.display = 'block';
+                    step2.style.display = 'none';
+                });
+                closeBtn.addEventListener('click', () => fpModal.style.display = 'none');
+                window.addEventListener('click', (e) => {
+                    if (e.target == fpModal) fpModal.style.display = 'none';
+                });
+            }
+        });
+    </script>
 </body>
 </html>
