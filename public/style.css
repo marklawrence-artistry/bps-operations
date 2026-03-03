@@ -838,162 +838,200 @@ button[type="submit"]:hover { opacity: 0.9; }
 .status-badge.critical { background-color: #fee2e2; color: #991b1b; }
 
 
-/* 
-   =========================================
-   LOGIN PAGE SPECIFIC STYLES
-   =========================================
-*/
-
-/* Main body for login should allow scroll on mobile if content is tall */
 .login-body {
-    background-color: white;
+    background-color: #f3f4f6; /* Light gray background for the page */
     min-height: 100vh;
-}
-
-.login-container {
     display: flex;
-    width: 100%;
-    min-height: 100vh;
-}
-
-/* --- LEFT SIDE (Blue) --- */
-.login-left {
-    flex: 1;
-    background-color: #1e3a8a; /* Deep Blue from Mockup */
-    display: flex;
+    justify-content: center;
     align-items: center;
-    justify-content: center; /* Center horizontally */
-    padding: 4rem;
+    font-family: 'Inter', sans-serif;
+    margin: 0;
+}
+
+/* The Centered Wrapper */
+.login-page-wrapper {
+    width: 100%;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* The Floating Card */
+.login-card {
+    background-color: white;
+    width: 1000px;
+    height: 600px;
+    border-radius: 24px; /* Large rounded corners like reference */
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    display: flex;
+    overflow: hidden; /* Ensures content stays within rounded corners */
+}
+
+/* --- LEFT SIDE (Gradient Blue) --- */
+.login-left {
+    flex: 0.8; /* Takes up about 45% of width */
+    background: linear-gradient(135deg, #2e3b97 0%, #1e2a78 100%); /* BPS Blue Gradient */
+    padding: 3rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    color: white;
     position: relative;
 }
 
-.login-left-content {
-    max-width: 500px;
+/* Add a subtle glow effect to match reference style */
+.login-left::before {
+    content: '';
+    position: absolute;
+    top: -50px;
+    left: -50px;
+    width: 300px;
+    height: 300px;
+    background: rgba(255, 255, 255, 0.1);
+    filter: blur(80px);
+    border-radius: 50%;
 }
 
-.login-left h1 {
-    font-size: 3.5rem;
-    font-weight: 800;
-    color: white;
-    line-height: 1.1;
-    margin-bottom: 1.5rem;
-    letter-spacing: -1px;
+.login-logo-brand {
+    width: 140px;
+    filter: brightness(0) invert(1); /* Make logo white */
 }
 
-.login-left p {
-    font-size: 1.1rem;
-    color: rgba(255, 255, 255, 0.8);
-    line-height: 1.6;
-    font-weight: 300;
+.login-left-text h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 1rem;
 }
 
-.seller-image-preview {
-    display: none;
-    width: 100%;
-    max-height: 200px;
-    object-fit: cover;
-    margin-top: 10px;
-    border-radius: 8px;
+.login-left-text p {
+    font-size: 1rem;
+    opacity: 0.9;
+    line-height: 1.5;
+    max-width: 90%;
 }
 
-/* --- RIGHT SIDE (White) --- */
+/* --- RIGHT SIDE (Form) --- */
 .login-right {
-    flex: 1;
+    flex: 1.2; /* Takes up remaining space */
     background-color: white;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 2rem;
+    padding: 4rem;
 }
 
 .login-form-wrapper {
     width: 100%;
-    max-width: 420px;
-}
-
-.brand-header img {
-    height: 50px;
-    margin-bottom: 2rem;
+    max-width: 400px;
 }
 
 .login-form-wrapper h2 {
     font-size: 2rem;
     font-weight: 800;
     color: #111827;
-    margin-bottom: 2rem;
+    margin-bottom: 0.5rem;
 }
 
-/* Input Fields */
+.login-subtext {
+    color: #6b7280;
+    margin-bottom: 2rem;
+    font-size: 0.95rem;
+}
+
+/* Inputs */
 .login-input-group {
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.2rem;
 }
 
 .login-input-group label {
     display: block;
-    font-weight: 700;
+    font-weight: 600;
     font-size: 0.9rem;
     color: #374151;
     margin-bottom: 0.5rem;
 }
 
-.input-with-icon {
-    position: relative;
-    display: flex;
-    align-items: center;
-}
-
-.input-with-icon img {
-    position: absolute;
-    left: 1rem;
-    width: 20px;
-    height: 20px;
-    opacity: 0.5;
-}
-
-.input-with-icon input {
+.login-input-group input {
     width: 100%;
-    padding: 1rem 1rem 1rem 3rem; /* Space for icon */
-    background-color: #f3f4f6; /* Light gray background */
+    padding: 0.9rem 1rem;
+    background-color: white;
     border: 1px solid #e5e7eb;
-    border-radius: 8px; /* Slightly squarer than dashboard inputs */
+    border-radius: 12px; /* Smooth rounded corners */
     font-size: 0.95rem;
     outline: none;
     transition: all 0.2s;
 }
 
-.input-with-icon input:focus {
-    background-color: white;
-    border-color: #111827; /* Dark border on focus */
+.login-input-group input:focus {
+    border-color: #2e3b97; /* BPS Blue focus */
+    box-shadow: 0 0 0 4px rgba(46, 59, 151, 0.1);
 }
 
-/* Forgot Password */
-.login-options {
-    text-align: right;
-    margin-bottom: 2rem;
+.login-input-group input::placeholder {
+    color: #9ca3af;
 }
 
-.login-options a {
-    color: #6b7280;
-    font-size: 0.9rem;
-    text-decoration: underline;
-}
-
-/* Login Button */
+/* Button */
 .login-btn {
     width: 100%;
-    background-color: #ff9831; /* Orange */
+    background: linear-gradient(90deg, #ff9831 0%, #e68a2e 100%); /* BPS Orange Gradient */
     color: white;
     padding: 1rem;
-    border-radius: 50px; /* Pill shape */
+    border-radius: 12px;
     font-size: 1rem;
     font-weight: 700;
     border: none;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: transform 0.2s, box-shadow 0.2s;
+    margin-top: 1rem;
+    box-shadow: 0 4px 12px rgba(255, 152, 49, 0.3);
 }
 
 .login-btn:hover {
-    background-color: #e68a2e;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(255, 152, 49, 0.4);
+}
+
+/* Links */
+.login-options {
+    text-align: center;
+    margin-top: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.divider-text {
+    font-size: 0.8rem;
+    color: #9ca3af;
+    position: relative;
+    display: block;
+    width: 100%;
+    text-align: center;
+}
+
+.divider-text::before, .divider-text::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 30%;
+    height: 1px;
+    background-color: #e5e7eb;
+}
+.divider-text::before { left: 0; }
+.divider-text::after { right: 0; }
+
+.login-options a {
+    color: #2e3b97;
+    font-size: 0.9rem;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.login-options a:hover {
+    text-decoration: underline;
 }
 
 
