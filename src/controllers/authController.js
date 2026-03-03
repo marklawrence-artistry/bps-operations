@@ -144,7 +144,8 @@ const getAllUsers = async (req, res) => {
             params.push(req.query.role);
         }
 
-        query += ` LIMIT ? OFFSET ?`;
+        const sortOrder = req.query.sort === 'ASC' ? 'ASC' : 'DESC';
+        query += ` ORDER BY created_at ${sortOrder} LIMIT ? OFFSET ?`;
         const queryParams = [...params, limit, offset];
 
         const users = await all(query, queryParams);
@@ -353,7 +354,24 @@ const changePassword = async (req, res) => {
     }
 };
 
+const updateSecurityQA = async (req, res) => {
+    try {
+        const { question, answer } = req.body;
+        if (!question || !answer) return res.status(400).json({ success: false, data: "Both fields required." });
+
+        const salt = await bcrypt.genSalt(10);
+        const hash = await bcrypt.hash(answer, salt);
+
+        await run(`UPDATE users SET security_question = ?, security_answer_hash = ? WHERE id = ?`, [question, hash, req.user.id]);
+        await logAudit(req.user.id, 'UPDATE', 'users', req.user.id, 'Updated own security question', req.ip);
+
+        res.status(200).json({ success: true, data: "Security Question updated successfully." });
+    } catch (err) {
+        res.status(500).json({ success: false, data: err.message });
+    }
+};
+
 module.exports = { 
     login, getAllUsers, createUser, updateUser, deleteUser, getUser, disableUser, enableUser, checkSession, 
-    getSecurityQuestion, resetPassword, changePassword
+    getSecurityQuestion, resetPassword, changePassword, updateSecurityQA
 }

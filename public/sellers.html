@@ -92,6 +92,20 @@
             </div>
 
             <div class="main">
+                <div class="overview-grid" style="margin-bottom: 1.5rem;">
+                    <div class="stat-card" style="padding: 1rem 1.5rem;">
+                        <div class="stat-content">
+                            <h3>Total <br><strong class="stat-highlight">Sellers</strong></h3>
+                            <div class="stat-value" id="kpi-seller-total" style="font-size: 1.8rem;">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card" style="padding: 1rem 1.5rem;">
+                        <div class="stat-content">
+                            <h3>Top Platform <br><strong class="stat-highlight" style="color:#0284c7;" id="kpi-seller-platform">N/A</strong></h3>
+                            <div class="stat-value" id="kpi-seller-top-count" style="font-size: 1.8rem; color:#0284c7;">0</div>
+                        </div>
+                    </div>
+                </div>
                 <div class="account-actions">
                     <select id="seller-cat-filter" style="padding: 0.5rem; border-radius: 10px; border: 1px solid #e5e7eb; margin-right: 10px;">
                         <option value="">All Categories</option>
@@ -100,6 +114,10 @@
                         <option value="Home & Living">Home & Living</option>
                         <option value="Health & Beauty">Health & Beauty</option>
                         <option value="Others">Others</option>
+                    </select>
+                    <select class="sort-filter" style="padding: 0.5rem; border-radius: 10px; border: 1px solid #e5e7eb; margin-right: 10px;">
+                        <option value="DESC">Newest First</option>
+                        <option value="ASC">Oldest First</option>
                     </select>
                     <div class="search-box">
                         <img src="Icons/Manage User Acc Page/search_icon.png" alt="Search">

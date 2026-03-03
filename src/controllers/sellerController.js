@@ -64,7 +64,8 @@ const getAllSeller = async (req, res) => {
             params.push(req.query.category);
         }
 
-        query += ` ORDER BY created_at DESC LIMIT ? OFFSET ?`;
+        const sortOrder = req.query.sort === 'ASC' ? 'ASC' : 'DESC';
+        query += ` ORDER BY created_at ${sortOrder} LIMIT ? OFFSET ?`;
         const queryParams = [...params, limit, offset];
 
         const rows = await all(query, queryParams);
@@ -77,8 +78,23 @@ const getAllSeller = async (req, res) => {
             row.contact_num = decryptText(row.contact_num);
         });
 
+        const totalSellers = await get(`SELECT COUNT(id) as count FROM seller`);
+        const topPlatform = await get(`
+            SELECT platform_name, COUNT(id) as count 
+            FROM seller 
+            GROUP BY platform_name 
+            ORDER BY count DESC LIMIT 1
+        `);
+
+        // Update the response to include stats
         res.status(200).json({
-            success: true, data: rows,
+            success: true, 
+            data: rows,
+            stats: {
+                total: totalSellers.count || 0,
+                topPlatformName: topPlatform ? topPlatform.platform_name : 'N/A',
+                topPlatformCount: topPlatform ? topPlatform.count : 0
+            },
             pagination: { current: page, limit, totalItems, totalPages }
         });
     } catch (err) {

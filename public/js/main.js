@@ -315,14 +315,14 @@ let currentAccount = null;
 
 // Global State for Pagination
 const state = {
-    accountPage: 1, accountSearch: '', accountRole: '',
+    accountPage: 1, accountSearch: '', accountRole: '', accountSort: 'DESC',
+    sellerPage: 1, sellerSearch: '', sellerCategory: '', sellerSort: 'DESC',
+    documentPage: 1, documentSearch: '', documentCategory: '', documentSort: 'DESC',
     inventoryPage: 1, inventorySearch: '', inventoryCategory: '', inventorySort: 'newest',
-    sellerPage: 1, sellerSearch: '', sellerCategory: '',
     rtsPage: 1, rtsSearch: '', rtsStatus: '', rtsSort: 'DESC',
     inventoryCatPage: 1,
     auditPage: 1, auditSearch: '', auditAction: '', auditSort: 'DESC',
-    salesPage: 1, salesSearch: '', salesSort: 'newest',
-    documentPage: 1, documentSearch: '', documentCategory: ''
+    salesPage: 1, salesSearch: '', salesSort: 'newest'
 };
 
 let lockoutTimer;
@@ -367,6 +367,12 @@ async function loadPaginatedData(apiMethod, renderMethod, listDiv, paginationDiv
             if (document.getElementById('kpi-inv-total')) {
                 document.getElementById('kpi-inv-total').innerText = result.stats.totalQuantity;
                 document.getElementById('kpi-inv-low').innerText = result.stats.lowStockCount;
+            }
+            // Seller KPIs
+            if (document.getElementById('kpi-seller-total')) {
+                document.getElementById('kpi-seller-total').innerText = result.stats.total;
+                document.getElementById('kpi-seller-platform').innerText = result.stats.topPlatformName;
+                document.getElementById('kpi-seller-top-count').innerText = result.stats.topPlatformCount + " Sellers";
             }
         }
 
@@ -622,9 +628,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             const updateDashboard = async () => {
                 const token = JSON.parse(localStorage.getItem('token'));
                 const stats = await api.getDashboardStats(token);
-                // ... (Copy the logic from your existing Dashboard section to update numbers here)
-                // Or simpler: just reload the page if you want to be lazy: location.reload();
-                // But updating text is cooler:
                 document.getElementById('stat-low-stock').innerText = stats.lowStockCount;
                 document.getElementById('stat-sales').innerText = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', notation: "compact" }).format(stats.salesMonthTotal);
                 document.getElementById('stat-sellers').innerText = stats.sellerCount;
@@ -900,7 +903,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const roleFilter = document.getElementById('account-role-filter'); // <--- GET ELEMENT
 
         // 1. UPDATE INITIAL LOAD to include 'accountRole'
-        loadPaginatedData(api.getAllAccounts, render.renderAccountsTable, accountListDiv, paginationDiv, 'accountPage', 'accountSearch', 'accountRole');
+        loadPaginatedData(api.getAllAccounts, render.renderAccountsTable, accountListDiv, paginationDiv, 'accountPage', 'accountSearch', 'accountRole', 'accountSort');
 
         // 2. UPDATE SEARCH LISTENER to include 'accountRole'
         const searchInput = document.querySelector('.search-box input');
@@ -908,7 +911,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             searchInput.addEventListener('input', debounce((e) => {
                 state.accountSearch = e.target.value.trim();
                 state.accountPage = 1;
-                loadPaginatedData(api.getAllAccounts, render.renderAccountsTable, accountListDiv, paginationDiv, 'accountPage', 'accountSearch', 'accountRole');
+                loadPaginatedData(api.getAllAccounts, render.renderAccountsTable, accountListDiv, paginationDiv, 'accountPage', 'accountSearch', 'accountRole', 'accountSort');
             }, 500));
         }
 
@@ -917,7 +920,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             roleFilter.addEventListener('change', (e) => {
                 state.accountRole = e.target.value;
                 state.accountPage = 1;
-                loadPaginatedData(api.getAllAccounts, render.renderAccountsTable, accountListDiv, paginationDiv, 'accountPage', 'accountSearch', 'accountRole');
+                loadPaginatedData(api.getAllAccounts, render.renderAccountsTable, accountListDiv, paginationDiv, 'accountPage', 'accountSearch', 'accountRole', 'accountSort');
             });
         }
 
@@ -1342,14 +1345,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         const sellerCatFilter = document.getElementById('seller-cat-filter');
 
         // 1. UPDATE INITIAL LOAD
-        loadPaginatedData(api.getAllSellers, render.renderSellersTable, sellerListDiv, paginationDiv, 'sellerPage', 'sellerSearch', 'sellerCategory');
+        loadPaginatedData(api.getAllSellers, render.renderSellersTable, sellerListDiv, paginationDiv, 'sellerPage', 'sellerSearch', 'sellerCategory', 'sellerSort');
 
         // 2. FILTER LISTENER
         if(sellerCatFilter) {
             sellerCatFilter.addEventListener('change', (e) => {
                 state.sellerCategory = e.target.value;
                 state.sellerPage = 1;
-                loadPaginatedData(api.getAllSellers, render.renderSellersTable, sellerListDiv, paginationDiv, 'sellerPage', 'sellerSearch', 'sellerCategory');
+                loadPaginatedData(api.getAllSellers, render.renderSellersTable, sellerListDiv, paginationDiv, 'sellerPage', 'sellerSearch', 'sellerCategory', 'sellerSort');
             });
         }
 
@@ -1881,14 +1884,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         const docCatFilter = document.getElementById('doc-category-filter');
 
         // 1. UPDATE INITIAL LOAD
-        loadPaginatedData(api.getAllDocuments, render.renderDocumentsTable, documentListDiv, paginationDiv, 'documentPage', 'documentSearch', 'documentCategory');
+        loadPaginatedData(api.getAllDocuments, render.renderDocumentsTable, documentListDiv, paginationDiv, 'documentPage', 'documentSearch', 'documentCategory', 'documentSort');
 
         // 2. FILTER LISTENER
         if(docCatFilter) {
             docCatFilter.addEventListener('change', (e) => {
                 state.documentCategory = e.target.value;
                 state.documentPage = 1;
-                loadPaginatedData(api.getAllDocuments, render.renderDocumentsTable, documentListDiv, paginationDiv, 'documentPage', 'documentSearch', 'documentCategory');
+                loadPaginatedData(api.getAllDocuments, render.renderDocumentsTable, documentListDiv, paginationDiv, 'documentPage', 'documentSearch', 'documentCategory', 'documentSort');
             });
         }
 
@@ -2589,6 +2592,45 @@ document.addEventListener('DOMContentLoaded', async () => {
                 } finally {
                     btnEncrypt.innerText = originalText;
                     btnEncrypt.disabled = false;
+                }
+            });
+        }
+
+
+        // 7. SECURITY Q&A LOGIC
+        const qaForm = document.getElementById('security-qa-form');
+        if (qaForm) {
+            // Optional: Fetch current question to pre-fill it
+            fetch('/api/auth/me', { headers: { 'Authorization': `Bearer ${token}` } })
+                .then(res => res.json())
+                .then(data => {
+                    // Assuming you returned security_question in the /me payload, or just let them overwrite it blind.
+                });
+
+            qaForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const question = document.getElementById('sec-question').value;
+                const answer = document.getElementById('sec-answer').value;
+
+                try {
+                    const res = await fetch('/api/auth/security-question', {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}` 
+                        },
+                        body: JSON.stringify({ question, answer })
+                    });
+                    const result = await res.json();
+                    
+                    if (result.success) {
+                        alert(result.data);
+                        qaForm.reset();
+                    } else {
+                        alert("Error: " + result.data);
+                    }
+                } catch (err) {
+                    alert("Network error.");
                 }
             });
         }

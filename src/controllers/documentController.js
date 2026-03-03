@@ -30,7 +30,8 @@ const getAllDocuments = async (req, res) => {
             params.push(req.query.category);
         }
 
-        query += ` ORDER BY expiry_date ASC LIMIT ? OFFSET ?`;
+        const sortOrder = req.query.sort === 'ASC' ? 'ASC' : 'DESC';
+        query += ` ORDER BY created_at ${sortOrder} LIMIT ? OFFSET ?`;
         const queryParams = [...params, limit, offset];
 
         const rows = await all(query, queryParams);
