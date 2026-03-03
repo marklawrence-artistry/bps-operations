@@ -3,7 +3,7 @@ const path = require('path');
 const archiver = require('archiver');
 const AdmZip = require('adm-zip');
 // Import reloadDB and getDB
-const { getDB, reloadDB } = require('../database'); 
+const { getDB, reloadDB, checkAndApplyMigrations } = require('../database');
 const { get, run, all } = require('../utils/db-async');
 const { encryptBuffer } = require('../utils/crypto');
 
@@ -149,8 +149,6 @@ const restoreBackup = async (req, res) => {
         const dbEntry = zipEntries.find(e => e.entryName === DB_NAME);
         if (dbEntry) {
             console.log("Closing DB for Restore...");
-            
-            // A. Close the existing connection to release file locks
             const currentDb = getDB();
             currentDb.close(async (err) => {
                 if (err) {
@@ -163,19 +161,18 @@ const restoreBackup = async (req, res) => {
                     fs.writeFileSync(DB_PATH, dbEntry.getData());
                     console.log("DB File Overwritten.");
 
-                    // C. Re-open the connection (Hot Reload)
+                    // C. Re-open the connection
                     await reloadDB();
-                    console.log("DB Hot Reloaded.");
+                    
+                    // --- CRITICAL FIX: RE-APPLY MIGRATIONS TO THE OLD DB ---
+                    checkAndApplyMigrations(); 
+                    console.log("Migrations applied to restored database.");
 
-                    // Cleanup
                     if(fs.existsSync(zipPath)) fs.unlinkSync(zipPath);
-
-                    // Send Success (Server stays alive!)
                     res.status(200).json({ success: true, data: "Restore complete! Data refreshed." });
 
                 } catch (writeErr) {
                     console.error("Write Error:", writeErr);
-                    // Try to reconnect even if write failed to save the app
                     await reloadDB();
                     res.status(500).json({ success: false, data: "Restore Write Failed." });
                 }

@@ -11,7 +11,7 @@ const getAllRTS = async (req, res) => {
         const search = req.query.search || '';
         const offset = (page - 1) * limit;
 
-        // FIX: Changed "WHERE record_status" to "WHERE rts.record_status"
+        // FIX: Explicitly use "rts.record_status" instead of just "record_status"
         let query = `
             SELECT rts.*, seller.name as seller_name 
             FROM rts 
@@ -26,7 +26,6 @@ const getAllRTS = async (req, res) => {
         let params = [];
 
         if(search) {
-            // FIX: Ensure we use rts. prefix for ambiguous columns if needed
             const searchSQL = ` AND (rts.tracking_no LIKE ? OR rts.customer_name LIKE ? OR rts.product_name LIKE ?)`;
             query += searchSQL;
             countQuery += searchSQL;
