@@ -1487,9 +1487,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // DELETE ACTION
             if(e.target.classList.contains('delete-btn')) {
+                const reason = prompt("Please provide a reason for deletion (Required):");
+                if (!reason || reason.trim() === "") {
+                    alert("Deletion cancelled: A reason is required for the Audit Log.");
+                    return;
+                }
+
                 if (await customConfirm("Are you sure you want to delete this record?")) {
                     try {
-                        await api.deleteRTS(id, token);
+                        await api.deleteRTS(id, token, reason);
                         alert("Record deleted.");
                         loadPaginatedData(api.getAllRTS, render.renderRTSTable, rtsListDiv, paginationDiv, 'rtsPage');
                     } catch(err) {
@@ -1859,9 +1865,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // DELETE ACTION
             if(e.target.classList.contains('delete-btn')) {
+                const reason = prompt("Please provide a reason for deletion (Required):");
+                if (!reason || reason.trim() === "") {
+                    alert("Deletion cancelled: A reason is required for the Audit Log.");
+                    return;
+                }
+
                 if (await customConfirm("Are you sure you want to delete this document?")) {
                     try {
-                        await api.deleteDocument(id, token);
+                        await api.deleteDocument(id, token, reason);
                         alert("Document deleted.");
                         loadPaginatedData(api.getAllDocuments, render.renderDocumentsTable, documentListDiv, paginationDiv, 'documentPage');
                     } catch(err) {

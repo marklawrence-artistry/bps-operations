@@ -444,13 +444,14 @@ export async function updateRTS(id, data, token) {
 }
 
 // (RTS) Delete
-export async function deleteRTS(id, token) {
+export async function deleteRTS(id, token, reason = "No reason provided") {
     const response = await request(`/api/rts/${id}`, {
         method: 'DELETE',
         headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
-        }
+        },
+        body: JSON.stringify({ reason })
     });
     const result = await response.json();
     if(!result.success) throw new Error(result.data);
@@ -601,13 +602,14 @@ export async function updateDocument(id, data, token) {
 }
 
 // (DOCUMENTS) Delete
-export async function deleteDocument(id, token) {
+export async function deleteDocument(id, token, reason = "No reason provided") {
     const response = await request(`/api/documents/${id}`, {
         method: 'DELETE',
         headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
-        }
+        },
+        body: JSON.stringify({ reason }) 
     });
     const result = await response.json();
     if(!result.success) throw new Error(result.data);

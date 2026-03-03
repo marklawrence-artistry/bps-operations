@@ -88,6 +88,7 @@ const updateDocument = async (req, res) => {
 const deleteDocument = async (req, res) => {
     try {
         const { id } = req.params;
+        const reason = req.body.reason || "No reason provided";
         
         // 1. Delete the physical file (Keep this logic)
         const doc = await get(`SELECT file_path FROM documents WHERE id = ?`, [id]);
@@ -103,14 +104,11 @@ const deleteDocument = async (req, res) => {
             
         }
 
-        // 2. *** FIX IS HERE: SWAP THESE TWO LINES ***
-        // Delete the Child (Logs) FIRST
         await run(`DELETE FROM notification_logs WHERE document_id = ?`, [id]);
         
-        // Delete the Parent (Document) SECOND
         await run(`DELETE FROM documents WHERE id = ?`, [id]);
         
-        await logAudit(req.user.id, 'DELETE', 'documents', id, `Deleted Doc ID: ${id}`, req.ip);
+        await logAudit(req.user.id, 'DELETE', 'documents', id, `Deleted Doc ID: ${id}. Reason: ${reason}`, req.ip);
         getIO().emit('document_update');
         res.status(200).json({ success: true, data: "Deleted." });
     } catch (err) {
