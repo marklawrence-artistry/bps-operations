@@ -2,7 +2,7 @@ const PDFDocument = require('pdfkit');
 const { all, get, run } = require('../utils/db-async');
 const logAudit = require('../utils/audit-logger');
 
-const allowedModules = ['inventory', 'seller', 'rts', 'weekly_sales', 'documents'];
+const allowedModules = ['inventory', 'seller', 'rts', 'weekly_sales', 'documents', 'audit_logs'];
 
 const getArchived = async (req, res) => {
     try {
@@ -15,6 +15,9 @@ const getArchived = async (req, res) => {
         if(module === 'documents') displayCol = 'title';
         if(module === 'rts') displayCol = 'tracking_no';
         if(module === 'weekly_sales') displayCol = 'week_start_date';
+        
+        // NEW: Handle Audit Logs display
+        if(module === 'audit_logs') displayCol = 'description'; 
 
         const rows = await all(`SELECT id, ${displayCol} as display_name, created_at FROM ${module} WHERE record_status = 'archived' ORDER BY created_at DESC`);
         

@@ -104,10 +104,10 @@ const initDB = () => {
             });
         }
 
-        const tablesToUpdate = ['inventory', 'seller', 'rts', 'weekly_sales', 'documents'];
+        const tablesToUpdate = ['inventory', 'seller', 'rts', 'weekly_sales', 'documents', 'audit_logs'];
+        
         tablesToUpdate.forEach(table => {
             db.run(`ALTER TABLE ${table} ADD COLUMN record_status TEXT DEFAULT 'active'`, (err) => {
-                // It will throw an error if the column already exists, which we just safely ignore
                 if (!err) console.log(`Added record_status column to ${table}`);
             });
         });
