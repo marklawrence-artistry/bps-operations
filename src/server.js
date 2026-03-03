@@ -36,13 +36,14 @@ const rateLimit = require('express-rate-limit');
 
 // Limits each IP to 500 requests per 10 minutes for general routes
 const globalLimiter = rateLimit({
-    windowMs: 10 * 60 * 1000, 
+    windowMs: 10 * 60 * 1000, // 10 minutes
     max: 500, 
-    message: { success: false, data: "Too many requests from this IP, please try again later." },
+    message: { success: false, data: "Too many requests from this device. For security, please wait 10 minutes before trying again." },
     standardHeaders: true,
     legacyHeaders: false,
 });
-app.use(globalLimiter);
+// CHANGE THIS LINE: Apply ONLY to API routes so it doesn't break HTML pages
+app.use('/api', globalLimiter);
 
 // 2. Helmet & Content Security Policy (Anti-XSS)
 app.use(helmet({

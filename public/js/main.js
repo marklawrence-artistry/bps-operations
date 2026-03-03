@@ -1,6 +1,16 @@
 import * as api from './api.js';
 import * as render from './render.js';
 
+try {
+    const tokenStr = localStorage.getItem('token');
+    if (tokenStr) {
+        const payload = JSON.parse(atob(tokenStr.replace(/^"|"$/g, '').split('.')[1]));
+        if (payload.role_id === 2) {
+            document.documentElement.classList.add('is-staff');
+        }
+    }
+} catch(e) { /* Ignore errors, server check will handle it */ }
+
 const ConnectivityManager = {
     isOffline: false,
     checkInterval: null,
@@ -359,7 +369,7 @@ async function loadPaginatedData(apiMethod, renderMethod, listDiv, paginationDiv
                 document.getElementById('kpi-inv-low').innerText = result.stats.lowStockCount;
             }
         }
-        
+
         renderMethod(result.data, listDiv);
 
         if (paginationDiv && result.pagination) {
@@ -391,31 +401,25 @@ function debounce(func, wait) {
     };
 }
 // --- HELPER: Role Based UI ---
-function applyRoleBasedUI() {
+async function applyRoleBasedUI() { // <-- MAKE IT ASYNC
     if (!currentAccount) return;
     
+    // If User is Staff (Role 2)
     if (currentAccount.role_id === 2) { 
-        const adminLinks = document.querySelectorAll('.admin-nav');
-        adminLinks.forEach(link => link.style.display = 'none');
+        document.documentElement.classList.add('is-staff'); // Backup application of the class
 
+        // Force Redirect if they type the URL manually
         const restrictedHrefs = ['audit-log.html', 'documents.html', 'sellers.html'];
-        const allNavItems = document.querySelectorAll('.nav-item');
-        
-        allNavItems.forEach(link => {
-            const href = link.getAttribute('href');
-            if (restrictedHrefs.includes(href)) {
-                link.style.display = 'none';
-            }
-        });
-
-        // 3. Force Redirect if they type the URL manually
         const currentPage = window.location.pathname.split('/').pop();
+        
         if (restrictedHrefs.includes(currentPage)) {
-            alert("Security Policy: You do not have permission to view this page.");
+            // Wait for user to click OK on the custom modal before redirecting
+            await window.alert("Security Policy: You do not have permission to view this page.");
             window.location.href = 'dashboard.html';
         }
     }
 }
+
 // --- HELPER: Check Session ---
 async function checkSession() {
     try {
@@ -430,7 +434,7 @@ async function checkSession() {
             userHeader.innerHTML = `<h4>${currentAccount.username}</h4><p>${currentAccount.role_id === 1 ? 'Admin' : 'Staff'}</p>`;
         }
 
-        applyRoleBasedUI();
+        await applyRoleBasedUI();
     } catch (err) {
         // DO NOT log out if it's just an offline network error!
         if (err.message && err.message.includes("Server unreachable")) {

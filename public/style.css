@@ -1228,3 +1228,10 @@ button[type="submit"]:hover { opacity: 0.9; }
     from { opacity: 1; transform: translateY(0); }
     to { opacity: 0; transform: translateY(20px); }
 }
+
+html.is-staff .admin-nav,
+html.is-staff a[href="audit-log.html"],
+html.is-staff a[href="documents.html"],
+html.is-staff a[href="sellers.html"] {
+    display: none !important;
+}
