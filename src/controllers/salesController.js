@@ -35,7 +35,11 @@ const getAllSales = async (req, res) => {
         const totalItems = countResult.count;
         const totalPages = Math.ceil(totalItems / limit);
 
-        const kpiResult = await get(`SELECT SUM(total_amount) as totalRev, AVG(total_amount) as avgRev FROM weekly_sales`);
+        const kpiResult = await get(`
+            SELECT SUM(total_amount) as totalRev, AVG(total_amount) as avgRev 
+            FROM weekly_sales 
+            WHERE record_status = 'active'
+        `);
 
         res.status(200).json({
             success: true, 
@@ -100,7 +104,7 @@ const deleteSale = async (req, res) => {
     try {
         const { id } = req.params;
         await run(`UPDATE weekly_sales SET record_status = 'archived' WHERE id = ?`, [id]);
-        await logAudit(req.user.id, 'DELETE', 'weekly_sales', id, `Deleted sales record ID: ${id}`, req.ip);
+        await logAudit(req.user.id, 'ARCHIVE', 'weekly_sales', id, `Deleted sales record ID: ${id}`, req.ip);
         getIO().emit('sales_update');
         res.status(200).json({ success: true, data: "Sales record deleted." });
     } catch (err) {

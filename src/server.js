@@ -117,12 +117,20 @@ cron.schedule('0 8 * * *', () => {
 
 cron.schedule('0 0 * * *', async () => {
     try {
-        console.log("Running Audit Log Cleanup...");
-        // UPDATED: Changed '-30 days' to '-1 year'
-        const result = await run(`DELETE FROM audit_logs WHERE created_at <= datetime('now', '-1 year')`);
-        console.log("Old audit logs (older than 1 year) cleared successfully.");
+        console.log("Running Audit Log Archival...");
+        
+        // OLD CODE: DELETE FROM audit_logs ...
+        // NEW CODE: Soft Delete (Archive) instead of Hard Delete
+        const result = await run(`
+            UPDATE audit_logs 
+            SET record_status = 'archived' 
+            WHERE created_at <= datetime('now', '-1 year') 
+            AND record_status = 'active'
+        `);
+        
+        console.log(`Archived old audit logs successfully.`);
     } catch (err) {
-        console.error("Failed to clean audit logs:", err.message);
+        console.error("Failed to archive audit logs:", err.message);
     }
 }, {
     scheduled: true,

@@ -6,7 +6,9 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="archive-page">
+    <input type="checkbox" id="nav-toggle" class="nav-toggle-checkbox" title="Toggle Navigation">
     <div class="content">
+        <label for="nav-toggle" class="sidebar-overlay"></label>
         <div class="sidebar">
             <div class="sidebar-header">
                 <img src="logo/Bicodo Postal Services Logo.png" alt="BPS Logo">
@@ -76,7 +78,18 @@
         </div>
         <div class="main-content">
             <div class="main-header">
-                <h1>System Archive</h1>
+                <div class="header-left">
+                    <label for="nav-toggle" class="hamburger">
+                        <span class="hamburger-line"></span>
+                        <span class="hamburger-line"></span>
+                        <span class="hamburger-line"></span>
+                    </label>
+                    <h1>System Archive</h1>
+                </div>
+                <div class="user-info">
+                    <h4>Admin</h4>
+                    <p>Archive Access</p>
+                </div>
             </div>
             <div class="main" style="padding: 2rem;">
                 <div class="account-actions">
@@ -86,6 +99,8 @@
                         <option value="rts">Returned-to-Seller</option>
                         <option value="documents">Documents</option>
                         <option value="weekly_sales">Sales</option>
+                        <!-- NEW OPTION -->
+                        <option value="audit_logs">Audit Logs (Older than 1 Year)</option>
                     </select>
                 </div>
 

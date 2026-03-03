@@ -11,13 +11,13 @@ const getAuditLogs = async (req, res) => {
             SELECT audit_logs.*, users.username 
             FROM audit_logs 
             LEFT JOIN users ON audit_logs.user_id = users.id 
-            WHERE 1=1
+            WHERE audit_logs.record_status = 'active'
         `;
         let countQuery = `
             SELECT COUNT(*) as count 
             FROM audit_logs 
             LEFT JOIN users ON audit_logs.user_id = users.id 
-            WHERE 1=1
+            WHERE audit_logs.record_status = 'active'
         `;
         let params = [];
 

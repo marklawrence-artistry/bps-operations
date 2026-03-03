@@ -78,10 +78,12 @@ const getAllSeller = async (req, res) => {
             row.contact_num = decryptText(row.contact_num);
         });
 
-        const totalSellers = await get(`SELECT COUNT(id) as count FROM seller`);
+        const totalSellers = await get(`SELECT COUNT(id) as count FROM seller WHERE record_status = 'active'`);
+        
         const topPlatform = await get(`
             SELECT platform_name, COUNT(id) as count 
             FROM seller 
+            WHERE record_status = 'active'
             GROUP BY platform_name 
             ORDER BY count DESC LIMIT 1
         `);
@@ -176,7 +178,7 @@ const deleteSeller = async (req, res) => {
             }
         }
 
-        await logAudit(req.user.id, 'DELETE', 'seller', id, `Deleted seller ID: ${id}. Reason: ${reason}`, req.ip);
+        await logAudit(req.user.id, 'ARCHIVE', 'seller', id, `Deleted seller ID: ${id}. Reason: ${reason}`, req.ip);
         getIO().emit('seller_update');
         res.status(200).json({ success: true, data: "Seller deleted." });
 

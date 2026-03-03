@@ -163,6 +163,7 @@ const getAllInventory = async (req, res) => {
                 SUM(quantity) as totalQty, 
                 SUM(CASE WHEN quantity <= min_stock_level THEN 1 ELSE 0 END) as lowCount 
             FROM inventory
+            WHERE record_status = 'active'
         `);
 
         res.status(200).json({
@@ -229,8 +230,8 @@ const deleteInventory = async (req, res) => {
             }
         }
 
-        await run(`DELETE FROM inventory WHERE id = ?`, [id]);
-        await logAudit(req.user.id, 'DELETE', 'inventory', id, `Deleted item ID: ${id} Reason: ${reason}`, req.ip);
+        await run(`UPDATE inventory SET record_status = 'archived' WHERE id = ?`, [id]);
+        await logAudit(req.user.id, 'ARCHIVE', 'inventory', id, `Deleted item ID: ${id} Reason: ${reason}`, req.ip);
         getIO().emit('inventory_update');
 
         res.status(200).json({ success: true, data: "Item deleted." });

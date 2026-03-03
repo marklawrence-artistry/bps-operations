@@ -11,20 +11,22 @@ const getAllRTS = async (req, res) => {
         const search = req.query.search || '';
         const offset = (page - 1) * limit;
 
+        // FIX: Changed "WHERE record_status" to "WHERE rts.record_status"
         let query = `
             SELECT rts.*, seller.name as seller_name 
             FROM rts 
             LEFT JOIN seller ON rts.seller_id = seller.id
-            WHERE record_status = 'active'
+            WHERE rts.record_status = 'active'
         `;
         let countQuery = `
             SELECT COUNT(*) as count FROM rts 
             LEFT JOIN seller ON rts.seller_id = seller.id
-            WHERE record_status = 'active'
+            WHERE rts.record_status = 'active'
         `;
         let params = [];
 
         if(search) {
+            // FIX: Ensure we use rts. prefix for ambiguous columns if needed
             const searchSQL = ` AND (rts.tracking_no LIKE ? OR rts.customer_name LIKE ? OR rts.product_name LIKE ?)`;
             query += searchSQL;
             countQuery += searchSQL;
@@ -123,7 +125,7 @@ const deleteRTS = async (req, res) => {
         await run(`UPDATE rts SET record_status = 'archived' WHERE id = ?`, [id]);
         
         // Append the reason to the description
-        await logAudit(req.user.id, 'DELETE', 'rts', id, `Deleted RTS log ID: ${id}. Reason: ${reason}`, req.ip);
+        await logAudit(req.user.id, 'ARCHIVE', 'rts', id, `Deleted RTS log ID: ${id}. Reason: ${reason}`, req.ip);
         
         getIO().emit('rts_update');
         res.status(200).json({ success: true, data: "RTS Record deleted." });

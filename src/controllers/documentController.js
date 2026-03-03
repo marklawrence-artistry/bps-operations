@@ -127,7 +127,7 @@ const deleteDocument = async (req, res) => {
         
         await run(`UPDATE documents SET record_status = 'archived' WHERE id = ?`, [id]);
         
-        await logAudit(req.user.id, 'DELETE', 'documents', id, `Deleted Doc ID: ${id}. Reason: ${reason}`, req.ip);
+        await logAudit(req.user.id, 'ARCHIVE', 'documents', id, `Deleted Doc ID: ${id}. Reason: ${reason}`, req.ip);
         getIO().emit('document_update');
         res.status(200).json({ success: true, data: "Deleted." });
     } catch (err) {

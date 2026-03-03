@@ -420,7 +420,7 @@ async function applyRoleBasedUI() { // <-- MAKE IT ASYNC
         document.documentElement.classList.add('is-staff'); // Backup application of the class
 
         // Force Redirect if they type the URL manually
-        const restrictedHrefs = ['audit-log.html', 'documents.html', 'sellers.html'];
+        const restrictedHrefs = ['audit-log.html', 'documents.html', 'sellers.html', 'archive.html'];
         const currentPage = window.location.pathname.split('/').pop();
         
         if (restrictedHrefs.includes(currentPage)) {

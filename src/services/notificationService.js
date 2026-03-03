@@ -25,19 +25,18 @@ const checkExpiringDocuments = async (isTest = false) => {
     let query;
 
     if (!isTest) {
-        // PRODUCTION
         query = `
             SELECT d.id, d.title, d.expiry_date, d.category
             FROM documents d
             WHERE 
-                (date(d.expiry_date) = date('now', 'localtime', '+30 days') 
+                d.record_status = 'active' AND
+                ((date(d.expiry_date) = date('now', 'localtime', '+30 days') 
                 AND NOT EXISTS (SELECT 1 FROM notification_logs nl WHERE nl.document_id = d.id AND nl.trigger_type = '30_day_warning'))
             OR 
                 (date(d.expiry_date) = date('now', 'localtime', '+7 days') 
-                AND NOT EXISTS (SELECT 1 FROM notification_logs nl WHERE nl.document_id = d.id AND nl.trigger_type = '7_day_warning'))
+                AND NOT EXISTS (SELECT 1 FROM notification_logs nl WHERE nl.document_id = d.id AND nl.trigger_type = '7_day_warning')))
         `;
     } else {
-        // TEST MODE
         query = `SELECT id, title, expiry_date, category FROM documents WHERE date(expiry_date) >= date('now') LIMIT 20`;
     }
 
