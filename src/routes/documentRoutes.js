@@ -8,5 +8,6 @@ router.get('/', verifyToken, documentController.getAllDocuments);
 router.post('/', verifyToken, upload.single('document'), documentController.createDocument); // Expects form field 'document'
 router.put('/:id', verifyToken, documentController.updateDocument);
 router.delete('/:id', verifyToken, documentController.deleteDocument);
+router.get('/view/:id', verifyToken, documentController.viewDocument);
 
 module.exports = router;

@@ -1,8 +1,10 @@
 const logAudit = require('../utils/audit-logger');
 const { all, get, run } = require('../utils/db-async');
 const { getIO } = require('../utils/socket');
-const fs = require('fs');     // <--- MISSING IMPORT
+const fs = require('fs');     
 const path = require('path'); 
+const { encryptBuffer, decryptBuffer } = require('../utils/crypto'); 
+
 
 const getAllDocuments = async (req, res) => {
     try {
@@ -51,6 +53,22 @@ const createDocument = async (req, res) => {
         if (!req.file) return res.status(400).json({ success: false, data: "No file uploaded." });
         if (!title || !category || !expiry_date) return res.status(400).json({ success: false, data: "Missing fields." });
 
+        const fileBuffer = fs.readFileSync(req.file.path);
+        
+        // --- NEW: Malicious PDF Scan ---
+        if (req.file.mimetype === 'application/pdf') {
+            const contentString = fileBuffer.toString('utf8');
+            // Basic heuristic for PDF malware (Embedded JS/Auto-execution)
+            if (contentString.includes('/JavaScript') || contentString.includes('/JS') || contentString.includes('/OpenAction')) {
+                fs.unlinkSync(req.file.path); // Delete the malicious file immediately
+                return res.status(400).json({ success: false, data: "Security Alert: Upload blocked. Malicious code detected in PDF." });
+            }
+        }
+
+        // --- NEW: Encrypt the file on disk ---
+        const encryptedBuffer = encryptBuffer(fileBuffer);
+        fs.writeFileSync(req.file.path, encryptedBuffer); // Overwrite with encrypted data
+
         const filePath = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
         
         const result = await run(`
@@ -60,7 +78,7 @@ const createDocument = async (req, res) => {
 
         await logAudit(req.user.id, 'CREATE', 'documents', result.lastID, `Uploaded: ${title}`, req.ip);
         getIO().emit('document_update');
-        res.status(201).json({ success: true, data: "Uploaded.", id: result.lastID });
+        res.status(201).json({ success: true, data: "Uploaded securely.", id: result.lastID });
     } catch (err) {
         res.status(500).json({ success: false, data: `Error: ${err.message}` });
     }
@@ -88,6 +106,7 @@ const updateDocument = async (req, res) => {
 const deleteDocument = async (req, res) => {
     try {
         const { id } = req.params;
+        const reason = req.body.reason || "No reason provided";
         
         // 1. Delete the physical file (Keep this logic)
         const doc = await get(`SELECT file_path FROM documents WHERE id = ?`, [id]);
@@ -103,14 +122,11 @@ const deleteDocument = async (req, res) => {
             
         }
 
-        // 2. *** FIX IS HERE: SWAP THESE TWO LINES ***
-        // Delete the Child (Logs) FIRST
         await run(`DELETE FROM notification_logs WHERE document_id = ?`, [id]);
         
-        // Delete the Parent (Document) SECOND
         await run(`DELETE FROM documents WHERE id = ?`, [id]);
         
-        await logAudit(req.user.id, 'DELETE', 'documents', id, `Deleted Doc ID: ${id}`, req.ip);
+        await logAudit(req.user.id, 'DELETE', 'documents', id, `Deleted Doc ID: ${id}. Reason: ${reason}`, req.ip);
         getIO().emit('document_update');
         res.status(200).json({ success: true, data: "Deleted." });
     } catch (err) {
@@ -119,4 +135,36 @@ const deleteDocument = async (req, res) => {
     }
 };
 
-module.exports = { getAllDocuments, createDocument, deleteDocument, updateDocument };
+const viewDocument = async (req, res) => {
+    try {
+        const doc = await get(`SELECT file_path FROM documents WHERE id = ?`, [req.params.id]);
+        if (!doc) return res.status(404).send("Document not found.");
+
+        const filename = doc.file_path.split('/').pop();
+        const uploadDir = process.env.RAILWAY_VOLUME_MOUNT_PATH 
+            ? path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH, 'uploads')
+            : path.join(__dirname, '../../public/uploads');
+            
+        const filePath = path.join(uploadDir, filename);
+
+        if (!fs.existsSync(filePath)) return res.status(404).send("File missing from disk.");
+
+        const encryptedBuffer = fs.readFileSync(filePath);
+        const decryptedBuffer = decryptBuffer(encryptedBuffer);
+
+        // Determine content type
+        const ext = path.extname(filename).toLowerCase();
+        let contentType = 'application/octet-stream';
+        if (ext === '.pdf') contentType = 'application/pdf';
+        else if (ext === '.png') contentType = 'image/png';
+        else if (ext === '.jpg' || ext === '.jpeg') contentType = 'image/jpeg';
+
+        res.setHeader('Content-Type', contentType);
+        res.send(decryptedBuffer);
+    } catch (err) {
+        res.status(500).send("Error decrypting file.");
+    }
+};
+
+// Make sure to export viewDocument at the bottom!
+module.exports = { getAllDocuments, createDocument, deleteDocument, updateDocument, viewDocument };

@@ -226,8 +226,9 @@ export function renderInventoryTable(data, container) {
             const row = document.createElement('tr');
             row.dataset.id = element.id;
             
+            const token = JSON.parse(localStorage.getItem('token'));
             const imgDisplay = element.image_url 
-                ? `<img src="${element.image_url}" style="width:40px; height:40px; object-fit:cover; border-radius:4px;">` 
+                ? `<img src="${element.image_url}?token=${token}" style="width:40px; height:40px; object-fit:cover; border-radius:4px;">` 
                 : `<span style="color:#ccc; font-size:0.8rem;">No Img</span>`;
 
             const statusClass = element.quantity <= element.min_stock_level ? 'critical' : 'active';
@@ -282,8 +283,9 @@ export function renderSellersTable(data, container) {
             const row = document.createElement('tr');
             row.dataset.id = element.id;
             
+            const token = JSON.parse(localStorage.getItem('token'));
             const imgDisplay = element.image_path 
-                ? `<img src="${element.image_path}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px;">` 
+                ? `<img src="${element.image_path}?token=${token}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px;">` 
                 : `<span style="font-size:0.8rem; color:#ccc; font-size:0.8rem;">No Img</span>`;
 
             row.innerHTML = `
@@ -452,6 +454,8 @@ export function renderDocumentsTable(data, container) {
                 statusBadge = '<span class="status-badge low">Expires Soon</span>';
             }
 
+            const token = JSON.parse(localStorage.getItem('token'));
+
             row.innerHTML = `
                 <td><input type="checkbox" class="row-select" value="${element.id}"></td>
                 <td><strong>${sanitize(element.title)}</strong></td>
@@ -460,7 +464,7 @@ export function renderDocumentsTable(data, container) {
                 <td>${statusBadge}</td>
                 <td>
                     <div class="action-buttons">
-                        <a href="${element.file_path}" target="_blank" class="btn" style="background:#e0f2fe; color:#0369a1; text-decoration:none;">View</a>
+                        <a href="/api/documents/view/${element.id}?token=${token}" target="_blank" class="btn" style="background:#e0f2fe; color:#0369a1; text-decoration:none;">View</a>
                         <button class='btn real-edit-btn' style="background-color: #f3f4f6; color: #1f2937;">Edit</button>
                         <button class='btn delete-btn'>Delete</button>
                     </div>

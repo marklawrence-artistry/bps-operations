@@ -13,4 +13,6 @@ router.get('/backup', verifyToken, isAdmin, systemController.createBackup);
 router.post('/restore', verifyToken, isAdmin, upload.single('backup_file'), systemController.restoreBackup);
 router.get('/health', verifyToken, isAdmin, systemController.getSystemHealth);
 
+router.post('/encrypt-legacy', verifyToken, isAdmin, systemController.encryptLegacyDocuments);
+
 module.exports = router;

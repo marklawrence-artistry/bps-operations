@@ -118,8 +118,13 @@ const updateRTS = async (req, res) => {
 const deleteRTS = async (req, res) => {
     try {
         const { id } = req.params;
+        const reason = req.body.reason || "No reason provided"; // <-- Extract reason
+
         await run(`DELETE FROM rts WHERE id = ?`, [id]);
-        await logAudit(req.user.id, 'DELETE', 'rts', id, `Deleted RTS log ID: ${id}`, req.ip);
+        
+        // Append the reason to the description
+        await logAudit(req.user.id, 'DELETE', 'rts', id, `Deleted RTS log ID: ${id}. Reason: ${reason}`, req.ip);
+        
         getIO().emit('rts_update');
         res.status(200).json({ success: true, data: "RTS Record deleted." });
     } catch (err) {

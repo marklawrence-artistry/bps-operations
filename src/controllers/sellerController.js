@@ -1,17 +1,21 @@
 const logAudit = require('../utils/audit-logger');
 const { all, get, run } = require('../utils/db-async');
 const { getIO } = require('../utils/socket');
-// --- MISSING IMPORTS WERE HERE ---
 const path = require('path'); 
 const fs = require('fs');
+const { encryptText, decryptText } = require('../utils/crypto');
+
+
 
 const createSeller = async (req, res) => {
     try {
         const { name, category, contact_num, email, platform_name, staff_id } = req.body;
-
         if (!name || !category || !contact_num || !email || !platform_name) {
             return res.status(400).json({ success: false, data: "All fields are required." });
         }
+
+        const encryptedEmail = encryptText(email);
+        const encryptedContact = encryptText(contact_num);
 
         // Image is optional, but if provided, use it
         const imageUrl = req.file ? `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}` : null;
@@ -20,7 +24,7 @@ const createSeller = async (req, res) => {
             INSERT INTO seller (name, category, contact_num, email, image_path, platform_name, staff_id)
             VALUES (?, ?, ?, ?, ?, ?, ?)
         `;
-        const params = [name, category, contact_num, email, imageUrl, platform_name, staff_id || req.user.id];
+        const params = [name, category, encryptedContact, encryptedEmail, imageUrl, platform_name, staff_id || req.user.id];
 
         const result = await run(query, params);
         await logAudit(req.user.id, 'CREATE', 'seller', result.lastID, `Created seller profile ${name}`, req.ip);
@@ -68,6 +72,11 @@ const getAllSeller = async (req, res) => {
         const totalItems = countResult.count;
         const totalPages = Math.ceil(totalItems / limit);
 
+        rows.forEach(row => {
+            row.email = decryptText(row.email);
+            row.contact_num = decryptText(row.contact_num);
+        });
+
         res.status(200).json({
             success: true, data: rows,
             pagination: { current: page, limit, totalItems, totalPages }
@@ -85,6 +94,9 @@ const getSeller = async (req, res) => {
         if (!row) {
             return res.status(404).json({ success: false, data: "Seller profile not found." });
         }
+
+        row.email = decryptText(row.email);
+        row.contact_num = decryptText(row.contact_num);
 
         res.status(200).json({ success: true, data: row });
     } catch (err) {

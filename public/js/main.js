@@ -1,6 +1,16 @@
 import * as api from './api.js';
 import * as render from './render.js';
 
+try {
+    const tokenStr = localStorage.getItem('token');
+    if (tokenStr) {
+        const payload = JSON.parse(atob(tokenStr.replace(/^"|"$/g, '').split('.')[1]));
+        if (payload.role_id === 2) {
+            document.documentElement.classList.add('is-staff');
+        }
+    }
+} catch(e) { /* Ignore errors, server check will handle it */ }
+
 const ConnectivityManager = {
     isOffline: false,
     checkInterval: null,
@@ -345,6 +355,21 @@ async function loadPaginatedData(apiMethod, renderMethod, listDiv, paginationDiv
         // Call API with token, page, search, ...filters
         const result = await apiMethod(token, currentPage, searchTerm, ...extraArgs);
 
+        if (result.stats) {
+            const formatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+            
+            // Sales KPIs
+            if (document.getElementById('kpi-sales-total')) {
+                document.getElementById('kpi-sales-total').innerText = formatter.format(result.stats.totalRevenue);
+                document.getElementById('kpi-sales-avg').innerText = formatter.format(result.stats.avgRevenue);
+            }
+            // Inventory KPIs
+            if (document.getElementById('kpi-inv-total')) {
+                document.getElementById('kpi-inv-total').innerText = result.stats.totalQuantity;
+                document.getElementById('kpi-inv-low').innerText = result.stats.lowStockCount;
+            }
+        }
+
         renderMethod(result.data, listDiv);
 
         if (paginationDiv && result.pagination) {
@@ -376,13 +401,25 @@ function debounce(func, wait) {
     };
 }
 // --- HELPER: Role Based UI ---
-function applyRoleBasedUI() {
+async function applyRoleBasedUI() { // <-- MAKE IT ASYNC
     if (!currentAccount) return;
-    if (currentAccount.role_id === 2) { // Staff
-        const adminLinks = document.querySelectorAll('.admin-nav');
-        adminLinks.forEach(link => link.style.display = 'none');
+    
+    // If User is Staff (Role 2)
+    if (currentAccount.role_id === 2) { 
+        document.documentElement.classList.add('is-staff'); // Backup application of the class
+
+        // Force Redirect if they type the URL manually
+        const restrictedHrefs = ['audit-log.html', 'documents.html', 'sellers.html'];
+        const currentPage = window.location.pathname.split('/').pop();
+        
+        if (restrictedHrefs.includes(currentPage)) {
+            // Wait for user to click OK on the custom modal before redirecting
+            await window.alert("Security Policy: You do not have permission to view this page.");
+            window.location.href = 'dashboard.html';
+        }
     }
 }
+
 // --- HELPER: Check Session ---
 async function checkSession() {
     try {
@@ -397,7 +434,7 @@ async function checkSession() {
             userHeader.innerHTML = `<h4>${currentAccount.username}</h4><p>${currentAccount.role_id === 1 ? 'Admin' : 'Staff'}</p>`;
         }
 
-        applyRoleBasedUI();
+        await applyRoleBasedUI();
     } catch (err) {
         // DO NOT log out if it's just an offline network error!
         if (err.message && err.message.includes("Server unreachable")) {
@@ -632,11 +669,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function initAutoLogout() {
-        // 30 minutes in milliseconds
         const TIMEOUT_MS = 30 * 60 * 1000; 
         let logoutTimer;
+        let sessionExpiryTime = Date.now() + TIMEOUT_MS;
 
         const resetTimer = () => {
+            sessionExpiryTime = Date.now() + TIMEOUT_MS;
             clearTimeout(logoutTimer);
             logoutTimer = setTimeout(() => {
                 alert("Session expired due to inactivity.");
@@ -649,9 +687,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.onload = resetTimer;
         document.onmousemove = resetTimer;
         document.onkeypress = resetTimer;
-        document.ontouchstart = resetTimer; // For mobile
+        document.ontouchstart = resetTimer; 
         document.onclick = resetTimer;
         document.onscroll = resetTimer;
+
+        // --- NEW: Visual Countdown Updater ---
+        setInterval(() => {
+            const elSession = document.getElementById('timer-session');
+            if (elSession) {
+                const timeLeft = Math.max(0, sessionExpiryTime - Date.now());
+                const m = Math.floor((timeLeft / 1000 / 60) % 60).toString().padStart(2, '0');
+                const s = Math.floor((timeLeft / 1000) % 60).toString().padStart(2, '0');
+                elSession.innerText = `${m}:${s}`;
+                
+                // Turn red if under 5 minutes
+                if (timeLeft < 300000) elSession.style.color = '#dc2626';
+                else elSession.style.color = '#16a34a'; // Green otherwise
+            }
+        }, 1000);
     }
 
     // Call this if the user is logged in
@@ -1487,9 +1540,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // DELETE ACTION
             if(e.target.classList.contains('delete-btn')) {
+                const reason = prompt("Please provide a reason for deletion (Required):");
+                if (!reason || reason.trim() === "") {
+                    alert("Deletion cancelled: A reason is required for the Audit Log.");
+                    return;
+                }
+
                 if (await customConfirm("Are you sure you want to delete this record?")) {
                     try {
-                        await api.deleteRTS(id, token);
+                        await api.deleteRTS(id, token, reason);
                         alert("Record deleted.");
                         loadPaginatedData(api.getAllRTS, render.renderRTSTable, rtsListDiv, paginationDiv, 'rtsPage');
                     } catch(err) {
@@ -1859,9 +1918,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // DELETE ACTION
             if(e.target.classList.contains('delete-btn')) {
+                const reason = prompt("Please provide a reason for deletion (Required):");
+                if (!reason || reason.trim() === "") {
+                    alert("Deletion cancelled: A reason is required for the Audit Log.");
+                    return;
+                }
+
                 if (await customConfirm("Are you sure you want to delete this document?")) {
                     try {
-                        await api.deleteDocument(id, token);
+                        await api.deleteDocument(id, token, reason);
                         alert("Document deleted.");
                         loadPaginatedData(api.getAllDocuments, render.renderDocumentsTable, documentListDiv, paginationDiv, 'documentPage');
                     } catch(err) {
@@ -2493,6 +2558,37 @@ document.addEventListener('DOMContentLoaded', async () => {
                     alert("Restore failed (Network Error)"); 
                     btn.innerText = orgText;
                     btn.disabled = false;
+                }
+            });
+        }
+
+        // 6. LEGACY ENCRYPTION LOGIC
+        const btnEncrypt = document.getElementById('btn-encrypt-legacy');
+        if (btnEncrypt) {
+            btnEncrypt.addEventListener('click', async () => {
+                if (!confirm("This will encrypt all old files in the uploads folder. Make sure you have a backup first! Continue?")) return;
+                
+                const originalText = btnEncrypt.innerText;
+                btnEncrypt.innerText = "Encrypting files... please wait.";
+                btnEncrypt.disabled = true;
+
+                try {
+                    const res = await fetch('/api/system/encrypt-legacy', {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    const result = await res.json();
+                    
+                    if (result.success) {
+                        alert(result.data); // Shows how many were encrypted
+                    } else {
+                        alert("Error: " + result.data);
+                    }
+                } catch (err) {
+                    alert("Migration failed. Check server console.");
+                } finally {
+                    btnEncrypt.innerText = originalText;
+                    btnEncrypt.disabled = false;
                 }
             });
         }

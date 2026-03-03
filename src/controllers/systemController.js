@@ -4,7 +4,8 @@ const archiver = require('archiver');
 const AdmZip = require('adm-zip');
 // Import reloadDB and getDB
 const { getDB, reloadDB } = require('../database'); 
-const { get, run } = require('../utils/db-async');
+const { get, run, all } = require('../utils/db-async');
+const { encryptBuffer } = require('../utils/crypto');
 
 const DB_NAME = "bps.db";
 const DB_PATH = process.env.RAILWAY_VOLUME_MOUNT_PATH 
@@ -192,4 +193,47 @@ const restoreBackup = async (req, res) => {
     }
 };
 
-module.exports = { createBackup, getSystemHealth, restoreBackup, getSettings, updateSettings };
+const encryptLegacyDocuments = async (req, res) => {
+    try {
+        // 1. Get all documents from DB
+        const documents = await all(`SELECT file_path FROM documents`);
+        let successCount = 0;
+        let failCount = 0;
+
+        for (const doc of documents) {
+            const filename = doc.file_path.split('/').pop();
+            const filePath = path.join(UPLOADS_PATH, filename);
+
+            if (fs.existsSync(filePath)) {
+                const buffer = fs.readFileSync(filePath);
+                
+                // Very basic check: If it starts with standard file signatures, it's NOT encrypted yet
+                // PDF = %PDF (25 50 44 46), PNG = \x89PNG (89 50 4E 47), JPG = FF D8
+                const isUnencrypted = 
+                    buffer.includes(Buffer.from('25504446', 'hex')) || // PDF
+                    buffer.includes(Buffer.from('89504e47', 'hex')) || // PNG
+                    buffer.includes(Buffer.from('ffd8ffe0', 'hex')) || // JPG
+                    buffer.includes(Buffer.from('ffd8ffe1', 'hex'));   // JPG alt
+
+                if (isUnencrypted) {
+                    const encryptedBuffer = encryptBuffer(buffer);
+                    fs.writeFileSync(filePath, encryptedBuffer);
+                    successCount++;
+                } else {
+                    failCount++; // Probably already encrypted
+                }
+            }
+        }
+
+        res.status(200).json({ 
+            success: true, 
+            data: `Migration Complete. Encrypted ${successCount} legacy files. Skipped ${failCount} files (likely already encrypted).` 
+        });
+    } catch (error) {
+        console.error("Encryption Migration Error:", error);
+        res.status(500).json({ success: false, data: error.message });
+    }
+};
+
+// Update your exports at the bottom!
+module.exports = { createBackup, getSystemHealth, restoreBackup, getSettings, updateSettings, encryptLegacyDocuments };
