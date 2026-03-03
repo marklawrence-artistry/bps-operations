@@ -35,8 +35,15 @@ const getAllSales = async (req, res) => {
         const totalItems = countResult.count;
         const totalPages = Math.ceil(totalItems / limit);
 
+        const kpiResult = await get(`SELECT SUM(total_amount) as totalRev, AVG(total_amount) as avgRev FROM weekly_sales`);
+
         res.status(200).json({
-            success: true, data: rows,
+            success: true, 
+            data: rows,
+            stats: {
+                totalRevenue: kpiResult.totalRev || 0,
+                avgRevenue: kpiResult.avgRev || 0
+            },
             pagination: { current: page, limit, totalItems, totalPages }
         });
     } catch (err) {

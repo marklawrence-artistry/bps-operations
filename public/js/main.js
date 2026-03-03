@@ -345,6 +345,21 @@ async function loadPaginatedData(apiMethod, renderMethod, listDiv, paginationDiv
         // Call API with token, page, search, ...filters
         const result = await apiMethod(token, currentPage, searchTerm, ...extraArgs);
 
+        if (result.stats) {
+            const formatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
+            
+            // Sales KPIs
+            if (document.getElementById('kpi-sales-total')) {
+                document.getElementById('kpi-sales-total').innerText = formatter.format(result.stats.totalRevenue);
+                document.getElementById('kpi-sales-avg').innerText = formatter.format(result.stats.avgRevenue);
+            }
+            // Inventory KPIs
+            if (document.getElementById('kpi-inv-total')) {
+                document.getElementById('kpi-inv-total').innerText = result.stats.totalQuantity;
+                document.getElementById('kpi-inv-low').innerText = result.stats.lowStockCount;
+            }
+        }
+        
         renderMethod(result.data, listDiv);
 
         if (paginationDiv && result.pagination) {
@@ -378,9 +393,27 @@ function debounce(func, wait) {
 // --- HELPER: Role Based UI ---
 function applyRoleBasedUI() {
     if (!currentAccount) return;
-    if (currentAccount.role_id === 2) { // Staff
+    
+    if (currentAccount.role_id === 2) { 
         const adminLinks = document.querySelectorAll('.admin-nav');
         adminLinks.forEach(link => link.style.display = 'none');
+
+        const restrictedHrefs = ['audit-log.html', 'documents.html', 'sellers.html'];
+        const allNavItems = document.querySelectorAll('.nav-item');
+        
+        allNavItems.forEach(link => {
+            const href = link.getAttribute('href');
+            if (restrictedHrefs.includes(href)) {
+                link.style.display = 'none';
+            }
+        });
+
+        // 3. Force Redirect if they type the URL manually
+        const currentPage = window.location.pathname.split('/').pop();
+        if (restrictedHrefs.includes(currentPage)) {
+            alert("Security Policy: You do not have permission to view this page.");
+            window.location.href = 'dashboard.html';
+        }
     }
 }
 // --- HELPER: Check Session ---
@@ -632,11 +665,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function initAutoLogout() {
-        // 30 minutes in milliseconds
         const TIMEOUT_MS = 30 * 60 * 1000; 
         let logoutTimer;
+        let sessionExpiryTime = Date.now() + TIMEOUT_MS;
 
         const resetTimer = () => {
+            sessionExpiryTime = Date.now() + TIMEOUT_MS;
             clearTimeout(logoutTimer);
             logoutTimer = setTimeout(() => {
                 alert("Session expired due to inactivity.");
@@ -649,9 +683,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.onload = resetTimer;
         document.onmousemove = resetTimer;
         document.onkeypress = resetTimer;
-        document.ontouchstart = resetTimer; // For mobile
+        document.ontouchstart = resetTimer; 
         document.onclick = resetTimer;
         document.onscroll = resetTimer;
+
+        // --- NEW: Visual Countdown Updater ---
+        setInterval(() => {
+            const elSession = document.getElementById('timer-session');
+            if (elSession) {
+                const timeLeft = Math.max(0, sessionExpiryTime - Date.now());
+                const m = Math.floor((timeLeft / 1000 / 60) % 60).toString().padStart(2, '0');
+                const s = Math.floor((timeLeft / 1000) % 60).toString().padStart(2, '0');
+                elSession.innerText = `${m}:${s}`;
+                
+                // Turn red if under 5 minutes
+                if (timeLeft < 300000) elSession.style.color = '#dc2626';
+                else elSession.style.color = '#16a34a'; // Green otherwise
+            }
+        }, 1000);
     }
 
     // Call this if the user is logged in

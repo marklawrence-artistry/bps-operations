@@ -158,8 +158,20 @@ const getAllInventory = async (req, res) => {
         const totalItems = countResult.count;
         const totalPages = Math.ceil(totalItems / limit);
 
+        const kpiResult = await get(`
+            SELECT 
+                SUM(quantity) as totalQty, 
+                SUM(CASE WHEN quantity <= min_stock_level THEN 1 ELSE 0 END) as lowCount 
+            FROM inventory
+        `);
+
         res.status(200).json({
-            success: true, data: inventory,
+            success: true, 
+            data: inventory,
+            stats: {
+                totalQuantity: kpiResult.totalQty || 0,
+                lowStockCount: kpiResult.lowCount || 0
+            },
             pagination: { current: page, limit, totalItems, totalPages }
         });
     } catch (err) {
