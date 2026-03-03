@@ -15,12 +15,12 @@ const getAllRTS = async (req, res) => {
             SELECT rts.*, seller.name as seller_name 
             FROM rts 
             LEFT JOIN seller ON rts.seller_id = seller.id
-            WHERE 1=1
+            WHERE record_status = 'active'
         `;
         let countQuery = `
             SELECT COUNT(*) as count FROM rts 
             LEFT JOIN seller ON rts.seller_id = seller.id
-            WHERE 1=1
+            WHERE record_status = 'active'
         `;
         let params = [];
 
@@ -120,7 +120,7 @@ const deleteRTS = async (req, res) => {
         const { id } = req.params;
         const reason = req.body.reason || "No reason provided"; // <-- Extract reason
 
-        await run(`DELETE FROM rts WHERE id = ?`, [id]);
+        await run(`UPDATE rts SET record_status = 'archived' WHERE id = ?`, [id]);
         
         // Append the reason to the description
         await logAudit(req.user.id, 'DELETE', 'rts', id, `Deleted RTS log ID: ${id}. Reason: ${reason}`, req.ip);

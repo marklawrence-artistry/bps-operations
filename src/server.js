@@ -26,7 +26,9 @@ const auditRoutes = require('./routes/auditRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const reportRoutes = require('./routes/reportRoutes');
-const systemRoutes = require('./routes/systemRoutes'); 
+const systemRoutes = require('./routes/systemRoutes');
+const archiveRoutes = require('./routes/archiveRoutes');
+
 
 const app = express();
 const PORT = process.env.port || 3000;
@@ -103,6 +105,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/system', systemRoutes);
+app.use('/api/archive', archiveRoutes);
 
 
 cron.schedule('0 8 * * *', () => {

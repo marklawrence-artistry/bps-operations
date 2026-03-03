@@ -2,15 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Audit Log - BPS Records System</title>
+    <title>System Archive - BPS</title>
     <link rel="stylesheet" href="style.css">
-    <script src="/socket.io/socket.io.js"></script>
 </head>
-<body class="audit-log-page">
-    <input type="checkbox" id="nav-toggle" class="nav-toggle-checkbox" title="Toggle Navigation">
+<body class="archive-page">
     <div class="content">
-        <label for="nav-toggle" class="sidebar-overlay"></label>
         <div class="sidebar">
             <div class="sidebar-header">
                 <img src="logo/Bicodo Postal Services Logo.png" alt="BPS Logo">
@@ -24,7 +20,7 @@
                     <img src="Icons/Sidebar-Navigation Bar (All Pages)/dashboard-icon.png" alt="Dashboard">
                     <span>Dashboard</span>
                 </a>
-                <a class="nav-item active" href="audit-log.html">
+                <a class="nav-item" href="audit-log.html">
                     <img src="Icons/Sidebar-Navigation Bar (All Pages)/audit_log_icon.png" alt="Audit Log">
                     <span>Audit Log</span>
                 </a>
@@ -61,7 +57,7 @@
                     <img src="Icons/Sidebar-Navigation Bar (All Pages)/accounts_icon.png" alt="Accounts">
                     <span>Accounts</span>
                 </a>
-                <a class="nav-item admin-nav" href="archive.html">
+                <a class="nav-item admin-nav active" href="archive.html">
                     <img src="Icons/archive.png" alt="Accounts">
                     <span>Archive</span>
                 </a>
@@ -78,65 +74,37 @@
                 </a>
             </div>
         </div>
-
         <div class="main-content">
             <div class="main-header">
-                <div class="header-left">
-                    <label for="nav-toggle" class="hamburger">
-                        <span class="hamburger-line"></span>
-                        <span class="hamburger-line"></span>
-                        <span class="hamburger-line"></span>
-                    </label>
-                    <h1>System Audit Log</h1>
-                </div>
-                <div class="user-info">
-                    <h4>Username</h4>
-                    <p>Role</p>
-                </div>
+                <h1>System Archive</h1>
             </div>
-
-            <div class="main">
+            <div class="main" style="padding: 2rem;">
                 <div class="account-actions">
-                    <select id="audit-action-filter" style="padding: 0.5rem; border-radius: 10px; border: 1px solid #e5e7eb; margin-right: 5px;">
-                        <option value="">All Actions</option>
-                        <option value="LOGIN">Login</option>
-                        <option value="CREATE">Create</option>
-                        <option value="UPDATE">Update</option>
-                        <option value="DELETE">Delete</option>
+                    <select id="archive-module-select" style="padding: 0.5rem; border-radius: 10px; border: 1px solid #e5e7eb;">
+                        <option value="inventory">Inventory</option>
+                        <option value="seller">Sellers</option>
+                        <option value="rts">Returned-to-Seller</option>
+                        <option value="documents">Documents</option>
+                        <option value="weekly_sales">Sales</option>
                     </select>
-
-                    <select id="audit-sort" style="padding: 0.5rem; border-radius: 10px; border: 1px solid #e5e7eb; margin-right: 10px;">
-                        <option value="DESC">Newest First</option>
-                        <option value="ASC">Oldest First</option>
-                    </select>
-                    <div class="search-box">
-                        <img src="Icons/Manage User Acc Page/search_icon.png" alt="Search">
-                        <input type="text" id="audit-search" placeholder="Search logs...">
-                    </div>
-                    <!-- No 'Add' button needed for logs -->
                 </div>
 
-                <div class="main-content-layout">
-                    <div class="table-section">
-                        <div class="table-card">
-                            <div id="audit-list">
-                                <!-- Audit table will be rendered here -->
-                            </div>
-                        </div>
-
-                        <div class="pagination">
-                            <button class="page-arrow prev">&lt;</button>
-                            <span class="page-numbers">
-                                <span class="page-num active">1</span>
-                            </span>
-                            <button class="page-arrow next">&gt;</button>
-                        </div>
-                    </div>
+                <div class="table-card">
+                    <table class="table" id="archive-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Record Name / Title</th>
+                                <th>Date Originally Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
                 </div>
             </div>
         </div>
     </div>
-
     <script src="js/main.js" type="module"></script>
 </body>
 </html>

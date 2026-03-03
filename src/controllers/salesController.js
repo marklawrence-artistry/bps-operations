@@ -9,8 +9,8 @@ const getAllSales = async (req, res) => {
         const search = req.query.search || '';
         const offset = (page - 1) * limit;
 
-        let query = `SELECT * FROM weekly_sales WHERE 1=1`;
-        let countQuery = `SELECT COUNT(*) as count FROM weekly_sales WHERE 1=1`;
+        let query = `SELECT * FROM weekly_sales WHERE record_status = 'active'`;
+        let countQuery = `SELECT COUNT(*) as count FROM weekly_sales WHERE record_status = 'active'`;
         let params = [];
 
         if(search) {
@@ -99,7 +99,7 @@ const updateSale = async (req, res) => {
 const deleteSale = async (req, res) => {
     try {
         const { id } = req.params;
-        await run(`DELETE FROM weekly_sales WHERE id = ?`, [id]);
+        await run(`UPDATE weekly_sales SET record_status = 'archived' WHERE id = ?`, [id]);
         await logAudit(req.user.id, 'DELETE', 'weekly_sales', id, `Deleted sales record ID: ${id}`, req.ip);
         getIO().emit('sales_update');
         res.status(200).json({ success: true, data: "Sales record deleted." });

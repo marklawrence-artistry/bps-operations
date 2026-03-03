@@ -103,6 +103,14 @@ const initDB = () => {
                 db.run(`INSERT OR IGNORE INTO users (username, email, password_hash, role_id, is_active) VALUES ('admin', 'admin@bps.com', ?, 1, 1)`, [hash]);
             });
         }
+
+        const tablesToUpdate = ['inventory', 'seller', 'rts', 'weekly_sales', 'documents'];
+        tablesToUpdate.forEach(table => {
+            db.run(`ALTER TABLE ${table} ADD COLUMN record_status TEXT DEFAULT 'active'`, (err) => {
+                // It will throw an error if the column already exists, which we just safely ignore
+                if (!err) console.log(`Added record_status column to ${table}`);
+            });
+        });
         seedAdmin();
     });
 };

@@ -47,8 +47,8 @@ const getAllSeller = async (req, res) => {
         const search = req.query.search || '';
         const offset = (page - 1) * limit;
 
-        let query = `SELECT id, name, category, contact_num, email, image_path, platform_name, created_at FROM seller WHERE 1=1`;
-        let countQuery = `SELECT COUNT(*) as count FROM seller WHERE 1=1`;
+        let query = `SELECT id, name, category, contact_num, email, image_path, platform_name, created_at FROM seller WHERE record_status = 'active'`;
+        let countQuery = `SELECT COUNT(*) as count FROM seller WHERE record_status = 'active'`;
         let params = [];
 
         if(search) {
@@ -160,7 +160,8 @@ const deleteSeller = async (req, res) => {
         const seller = await get(`SELECT image_path FROM seller WHERE id = ?`, [id]);
 
         // Attempt DB Delete
-        await run(`DELETE FROM seller WHERE id = ?`, [id]);
+        // await run(`DELETE FROM seller WHERE id = ?`, [id]);
+        await run(`UPDATE seller SET record_status = 'archived' WHERE id = ?`, [id]);
 
         // Only delete image if DB delete was successful (Foreign Key check passed)
         if (seller && seller.image_path) {

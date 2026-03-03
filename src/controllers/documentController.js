@@ -13,8 +13,8 @@ const getAllDocuments = async (req, res) => {
         const search = req.query.search || '';
         const offset = (page - 1) * limit;
 
-        let query = `SELECT * FROM documents WHERE 1=1`;
-        let countQuery = `SELECT COUNT(*) as count FROM documents WHERE 1=1`;
+        let query = `SELECT * FROM documents WHERE record_status = 'active'`;
+        let countQuery = `SELECT COUNT(*) as count FROM documents WHERE record_status = 'active'`;
         let params = [];
 
         if(search) {
@@ -125,7 +125,7 @@ const deleteDocument = async (req, res) => {
 
         await run(`DELETE FROM notification_logs WHERE document_id = ?`, [id]);
         
-        await run(`DELETE FROM documents WHERE id = ?`, [id]);
+        await run(`UPDATE documents SET record_status = 'archived' WHERE id = ?`, [id]);
         
         await logAudit(req.user.id, 'DELETE', 'documents', id, `Deleted Doc ID: ${id}. Reason: ${reason}`, req.ip);
         getIO().emit('document_update');

@@ -118,12 +118,12 @@ const getAllInventory = async (req, res) => {
             SELECT i.id, i.name, i.category_id, ic.name as category_name, i.quantity, i.min_stock_level, i.image_url 
             FROM inventory i
             LEFT JOIN inventory_categories ic ON i.category_id = ic.id
-            WHERE 1=1
+            WHERE record_status = 'active'
         `;
         let countQuery = `
             SELECT COUNT(*) as count FROM inventory i
             LEFT JOIN inventory_categories ic ON i.category_id = ic.id
-            WHERE 1=1
+            WHERE record_status = 'active'
         `;
         let params = [];
 

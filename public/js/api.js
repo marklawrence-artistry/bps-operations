@@ -62,8 +62,8 @@ export async function createAccount(data, token) {
 }
 
 // (AUTH) Get All Accounts (Paginated)
-export async function getAllAccounts(token, page = 1, search = '', role = '') {
-    const response = await request(`/api/auth?page=${page}&limit=10&search=${encodeURIComponent(search)}&role=${role}`, {
+export async function getAllAccounts(token, page = 1, search = '', role = '', sort = 'DESC') {
+    const response = await request(`/api/auth?page=${page}&limit=10&search=${encodeURIComponent(search)}&role=${role}&sort=${sort}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json', 'Authorization' : `Bearer ${token}` }
     });
@@ -325,8 +325,8 @@ export async function updateInventory(formData, id, token) {
 // -----------------------------------------------------------
 
 // (SELLER) Get All Sellers
-export async function getAllSellers(token, page = 1, search = '', category = '') {
-    const url = `/api/seller?page=${page}&limit=10&search=${encodeURIComponent(search)}&category=${encodeURIComponent(category)}`;
+export async function getAllSellers(token, page = 1, search = '', category = '', sort = 'DESC') {
+    const url = `/api/seller?page=${page}&limit=10&search=${encodeURIComponent(search)}&category=${encodeURIComponent(category)}&sort=${sort}`;
     const response = await request(url, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
@@ -563,8 +563,8 @@ export async function deleteSale(id, token) {
 // -----------------------------------------------------------
 
 // (DOCUMENTS) Get All (Paginated)
-export async function getAllDocuments(token, page = 1, search = '', category = '') {
-    const url = `/api/documents?page=${page}&limit=10&search=${encodeURIComponent(search)}&category=${encodeURIComponent(category)}`;
+export async function getAllDocuments(token, page = 1, search = '', category = '', sort = 'DESC') {
+    const url = `/api/documents?page=${page}&limit=10&search=${encodeURIComponent(search)}&category=${encodeURIComponent(category)}&sort=${sort}`;
     const response = await request(url, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
@@ -671,4 +671,40 @@ export async function getReportPreview(token, type, start = '', end = '') {
     const result = await response.json();
     if(!result.success) throw new Error(result.data);
     return result.data;
+}
+
+export async function getArchive(token, module) {
+    const response = await request(`/api/archive/${module}`, { headers: { 'Authorization': `Bearer ${token}` } });
+    const result = await response.json();
+    if(!result.success) throw new Error(result.data);
+    return result.data;
+}
+
+export async function restoreArchive(token, module, id) {
+    const response = await request(`/api/archive/restore/${module}/${id}`, { 
+        method: 'PUT', headers: { 'Authorization': `Bearer ${token}` } 
+    });
+    const result = await response.json();
+    if(!result.success) throw new Error(result.data);
+    return result.data;
+}
+
+// Special function to handle PDF download
+export async function hardDeleteArchive(token, module, id, reason) {
+    const response = await fetch(`/api/archive/hard-delete/${module}/${id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ reason })
+    });
+    if(!response.ok) throw new Error("Failed to process hard delete.");
+    
+    // Download the PDF file trigger
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Deleted_${module}_${id}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
 }
